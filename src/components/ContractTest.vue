@@ -11,6 +11,7 @@
         </div>
         
         <button @click="buttonPress" class="btn mt-2">Read Contract</button>
+        <button @click="buttonPressWrite" class="btn mt-2">Test Deposit</button>
 
         <div class="mt-4">
             <span v-if="contractState == {}">Enter a Contract ID and press the READ CONTRACT button.</span>
@@ -30,6 +31,8 @@ export default {
     components: { VueJsonPretty },
     data() {
         return {
+            warp: {},
+            contract: {},
             network: "mainnet",
             contractId: "",
             contractState: {},
@@ -40,43 +43,69 @@ export default {
             if (this.contractId === "") {
                 return;
             }
-
-            // Try to get wallet, if fails, connect so user can assign permissions
-            let wallet = "";
             try {
-                wallet = await window.arweaveWallet.getActiveAddress();
+                // Using Warp
+                if (this.network === "mainnet") {
+                    this.warp = WarpFactory.forMainnet();
+                } else if (this.network === "testnet") {
+                    this.warp = WarpFactory.forTestnet();
+                } else if (this.network === "local") {
+                    this.warp = WarpFactory.forLocal();
+                }
             } catch(e) {
                 console.log(e);
-                const promiseResult = await window.arweaveWallet.connect([
-                    "ACCESS_ADDRESS",
-                    "ACCESS_ALL_ADDRESSES",
-                    "SIGN_TRANSACTION",
-                    "ACCESS_ARWEAVE_CONFIG"
-                ]);
-                wallet = await window.arweaveWallet.getActiveAddress();
+                return;
             }
 
             try {
-                // Using Warp
-                let warp = {};
-                if (this.network === "mainnet") {
-                    warp = WarpFactory.forMainnet();
-                } else if (this.network === "testnet") {
-                    warp = WarpFactory.forTestnet();
-                } else if (this.network === "local") {
-                    warp = WarpFactory.forLocal();
-                }
-                
-                const contract = warp.contract(this.contractId)
-                    .setEvaluationOptions( { allowUnsafeClient: true } )
-                    .connect("use_wallet");
-                const { cachedValue } = await contract.readState();
+                this.contract = this.warpConnect(this.contractId);
+    
+                const { cachedValue } = await this.contract.readState();
                 let state = cachedValue;
                 this.contractState = state;
             } catch(e) {
                 console.log(e);
             }
+        },
+        async buttonPressWrite() {
+
+            const inputAllow = {
+                function: "allow",
+                target: this.contractId,
+                qty: 10,
+            };
+
+            const pstContractId = "4mhMltWZ5OefhGjF_DuiT7k-ZHKd8N6sLZo93Pu4H6U";
+            const contractPst = this.warpConnect(pstContractId);            
+            const { originalTxId, allowTxId } = await contractPst.writeInteraction(inputAllow);
+            //await fetch("http://localhost:1984/mine");
+            console.log("ALLOW: " + originalTxId + " | " + allowTxId);
+
+            const inputDeposit = {
+                function: "deposit",
+                tokenId: pstContractId,
+                qty: 10,
+                txID: originalTxId,
+            };
+
+            const { originalTxIdDep, depTxId } = await this.contract.writeInteraction(inputDeposit);
+            //await fetch("http://localhost:1984/mine");
+            console.log("DEPOSIT: " + originalTxIdDep + " | " + depTxId);
+        },
+        warpConnect(contractId) {
+            try {
+                const contract = this.warp.contract(contractId)
+                    .setEvaluationOptions({ 
+                        allowUnsafeClient: true,
+                        internalWrites: true,
+                     })
+                    .connect("use_wallet");
+                return contract;
+            } catch (e) {
+                console.log(e);
+                return {};
+            }
         }
-    }
+    },
 }
 </script>
