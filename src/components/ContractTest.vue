@@ -25,7 +25,15 @@
                 <vue-json-pretty :path="'res'" :data="contractStatePst" :showDoubleQuotes="false" :deep=3 :deepCollapseChildren="false" :showLength="true" :showSelectController="true"> </vue-json-pretty>
             </div>
         </div>
-
+            <div class="mt-2">
+                <input v-model="contractIdRead" type="text" placeholder="Enter Contract ID" class="input input-bordered w-96" /><br/>
+            </div>
+            <div><button @click="buttonPressRead" class="btn mt-2">4. Read PST Contract Again</button></div>
+            <div class="pt-4 w-full">
+                <vue-json-pretty :path="'res'" :data="contractStateRead" :showDoubleQuotes="false" :deep=3 :deepCollapseChildren="false" :showLength="true" :showSelectController="true"> </vue-json-pretty>
+            </div>
+        <div>
+        </div>
     </div>
 </template>
 
@@ -57,6 +65,9 @@ export default {
             contractStatePst: {},
             jwk: {},
             walletAddress: "",
+            contractIdRead: "",
+            contractRead: {},
+            contractStateRead: {},
         };
     },
     computed: {
@@ -101,8 +112,21 @@ export default {
             //     return;
             // }
 
+            // Create new contracts
             this.contractId = await createContract(this.arweave, "use_wallet", sampleContractSrc, sampleContractInitState);
-            this.contractIdPst = await createContract(this.arweave, "use_wallet", sampleContractSrc, pstInitState);
+            const aftrContractSrcId = await this.getContractSourceId(this.contractId);
+
+            // Test using createContractFromTx
+            let swTags = [{ name: "Protocol", value: "TEST" }];
+            this.contractIdPst = await createContractFromTx(this.arweave, "use_wallet", aftrContractSrcId, pstInitState, swTags);
+            this.contractIdRead = this.contractIdPst;
+
+            // Test using createContract
+            //this.contractIdPst = await createContract(this.arweave, "use_wallet", sampleContractSrc, pstInitState);
+
+            // Use hard-coded values for contracts
+            // this.contractId = "ksc9xhdFtg_VMv19ZGPEumhKcVzDvK2Zqm6yIoyCWO8";
+            // this.contractIdPst = "j8e-3qNnLSQRPNB1pN84zy0XKEmAyo7cKIcxqVGaPDw";
             
             await this.updateWalletBalance();
         },
@@ -138,6 +162,19 @@ export default {
             // Now read both contracts again
             await this.readContracts();
             await this.updateWalletBalance();
+        },
+        async buttonPressRead() {
+            if (this.contractIdRead === "") {
+                return;
+            }
+
+            /*** THE NEXT TIME WARP GETS INITIALIZED, THE CLAIMS CHANGE WHEN THE CONTRACT IS READ! */
+            this.warpInit();
+
+            // Read contract from textbox ID
+            this.contractRead = this.warpConnect(this.contractIdRead);
+            let result = await this.contractRead.readState();
+            this.contractStateRead = result.cachedValue;
         },
         async readContracts() {
             // Read AFTR contract
@@ -193,7 +230,21 @@ export default {
         async updateWalletBalance() {
             // Show how wallet is impacted after every transaction
             this.walletBalance = await this.arweave.wallets.getBalance(this.addr);
-        }
+        },
+        async getContractSourceId(txID) {
+            let tx = await this.arweave.transactions.get(txID);
+            let allTags = [];
+            tx.get("tags").forEach((tag) => {
+                let key = tag.get("name", { decode: true, string: true });
+                let value = tag.get("value", { decode: true, string: true });
+                allTags.push({key, value, });
+            });
+            for (let i = 0; i < allTags.length; i++) {
+                if (allTags[i].key === "Contract-Src") {
+                    return allTags[i].value;
+                }
+            }
+        },
     },
     async mounted() {
         this.arweave = await Arweave.init({
