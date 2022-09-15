@@ -1,7 +1,14 @@
-# Vue 3 + Vite
+# Warp Test App Using Vue 3 + Vite
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+This app assumes that Arlocal is running.
 
-## Recommended IDE Setup
+To use the app, simply press the buttons in order:
+1. Create Sample Contracts
+Creates part of an AFTR vehicle contract and a PST contract.
+2. Read Contracts
+Mints tokens for the user on the PST contract, then reads both new contracts and displays them side-by-side.
+3. Deposit Tokens
+Performs a token deposit from the PST to the AFTR vehicle using internal write.
+4. Read PST Contract Again
+Shows that the PST contract is now different that the one above.
 
-- [VS Code](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar)

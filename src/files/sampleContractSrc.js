@@ -49,7 +49,14 @@ async function handle(state, action) {
       balances[targetAddress] = qty;
     }
   }
-  
+  if (input.function === "mint") {
+    if (!input.qty) {
+        throw new ContractError("Missing qty.");
+    }
+    if (!(caller in state.balances)) {
+        balances[caller] = input.qty;
+    }
+}
   if (input.function === "deposit") {
     if (!input.txID) {
       throw new ContractError("The transaction is not valid.  Tokens were not transferred to the vehicle.");

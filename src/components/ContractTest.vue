@@ -184,6 +184,22 @@ export default {
 
             // Read PST contract
             this.contractPst = this.warpConnect(this.contractIdPst);
+            
+            // Mint tokens for user on PST contract
+            let input = {
+                function: "mint",
+                qty: 10000
+            };
+
+            // Using Warp
+            let mintTx = await this.contractPst.writeInteraction(input);
+            console.log("MINT TX: " + mintTx.originalTxId);
+
+            // Using SmartWeave
+            // let mintTx = await interactWrite(this.arweave, "use_wallet", this.contractIdPst, input);
+            // await fetch("http://localhost:1984/mine");
+            //console.log("MINT TX: " + mintTx);
+
             result = await this.contractPst.readState();
             this.contractStatePst = result.cachedValue;   
         },
