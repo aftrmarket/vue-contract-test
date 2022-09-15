@@ -77,7 +77,7 @@ async function handle(state, action) {
     }
 
     /*** For troubleshooting */
-    state.transferResult = transferResult;
+    //state.transferResult = transferResult;
     /*** For troubleshooting */
 
     const tokenInfo = await getTokenInfo(input.tokenId);
