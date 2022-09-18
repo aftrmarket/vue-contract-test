@@ -87,7 +87,7 @@ async function handle(state, action) {
     //state.transferResult = transferResult;
     /*** For troubleshooting */
 
-    const tokenInfo = await getTokenInfo(input.tokenId);
+    const tokenInfo = await getTokenInfo(transferResult.state);
     const txObj = {
       txID: input.txID,
       tokenId: input.tokenId,
@@ -187,8 +187,8 @@ function isArweaveAddress(addy) {
   return address;
 }
 
-async function getTokenInfo(contractId) {
-  const assetState = await SmartWeave.contracts.readContractState(contractId);
+async function getTokenInfo(assetState) {
+  //const assetState = await SmartWeave.contracts.readContractState(contractId);
   const settings = new Map(assetState.settings);
   return {
     name: assetState.name,
