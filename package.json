@@ -14,7 +14,7 @@
     "smartweave": "^0.4.49",
     "vue": "^3.2.37",
     "vue-json-pretty": "^2.2.2",
-    "warp-contracts": "^1.2.5"
+    "warp-contracts": "^1.2.10"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.7",

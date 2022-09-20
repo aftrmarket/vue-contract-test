@@ -12,12 +12,10 @@
             <div><label>PST Contract: <span class="font-mono">{{ contractIdPst }}</span></label></div>
             <div><button @click="buttonPress2" class="btn mt-2">2. Read Contracts</button></div>
         </div>
-        <div class="mt-2 mb-4">
-            <div><label>3. Write Interaction</label></div>
-            <div class="">
-                <button @click="buttonPress3" class="btn mt-2">3. Deposit Tokens</button> OR
-                <button @click="buttonPress4" class="btn mt-2">4. Withdrawal Tokens</button>
-            </div>
+        <div class="flex flex-col mt-2 mb-4">
+            <div class="prose"><h3>Write Interactions - Deposit, then put back with a Withdrawal</h3></div>
+            <div><button @click="buttonPress3" class="btn mt-2">3. Deposit Tokens</button></div>
+            <div><button @click="buttonPress4" class="btn mt-2">4. Withdrawal Tokens</button></div>
         </div>
         <div class="grid grid-cols-2 gap-4 p-4 border">
             <div class="pt-4 w-full">
@@ -180,7 +178,7 @@ export default {
                 target: tokenObj.source,
                 qty: this.transferQty
             };
-            const originalTxWd = await this.contract.writeInteraction(inputWd);
+            const originalTxWd = await this.warpWrite(this.contract, inputWd);
             console.log("WITHDRAWAL: " + JSON.stringify(originalTxWd));
             
             // Now read both contracts again
@@ -247,13 +245,21 @@ export default {
             try {
                 const contract = this.warp.contract(contractId)
                     .setEvaluationOptions({ 
-                        allowUnsafeClient: true,
                         internalWrites: true,
                      })
                     .connect("use_wallet");
                 return contract;
             } catch (e) {
                 console.log(e);
+                return {};
+            }
+        },
+        async warpWrite(contract, input) {
+            try {
+                const originalTx = await contract.writeInteraction(input);
+                return originalTx;
+            } catch(e) {
+                console.log("ERROR performing write interaction: " + e);
                 return {};
             }
         },
