@@ -13,7 +13,11 @@
             <div><button @click="buttonPress2" class="btn mt-2">2. Read Contracts</button></div>
         </div>
         <div class="mt-2 mb-4">
-            <button @click="buttonPress3" class="btn mt-2">3. Deposit Tokens</button>
+            <div><label>3. Write Interaction</label></div>
+            <div class="">
+                <button @click="buttonPress3" class="btn mt-2">3. Deposit Tokens</button> OR
+                <button @click="buttonPress4" class="btn mt-2">4. Withdrawal Tokens</button>
+            </div>
         </div>
         <div class="grid grid-cols-2 gap-4 p-4 border">
             <div class="pt-4 w-full">
@@ -47,6 +51,7 @@ import sampleContractSrc from "./../files/sampleContractSrc.js?raw";
 import { WarpFactory } from 'warp-contracts/web';
 import Arweave from "arweave";
 import { createContractFromTx, createContract, interactWrite, readContract } from "smartweave";
+import { vModelText } from 'vue';
 
 export default {
     components: { VueJsonPretty },
@@ -68,6 +73,8 @@ export default {
             contractIdRead: "",
             contractRead: {},
             contractStateRead: {},
+            transferQty: 1,
+            txAllowId: "",
         };
     },
     computed: {
@@ -139,26 +146,43 @@ export default {
         },
         async buttonPress3() {
             // Setup claim on PST contract
-            const transferQty = 1;
             const inputAllow = {
                 function: "allow",
                 target: this.contractId,
-                qty: transferQty,
+                qty: this.transferQty,
             };
     
             const { originalTxId, allowTxId } = await this.contractPst.writeInteraction(inputAllow);
+            this.txAllowId = originalTxId;
 
             // Call AFTR contract to claim the tokens and update the AFTR vehicle tokens object
             const inputDeposit = {
                 function: "deposit",
                 tokenId: this.contractIdPst,
-                qty: transferQty,
-                txID: originalTxId,
+                qty: this.transferQty,
+                txID: this.txAllowId,
             };
 
             const originalTxIdDep  = await this.contract.writeInteraction(inputDeposit);
             console.log("DEPOSIT: " + JSON.stringify(originalTxIdDep));
 
+            // Now read both contracts again
+            await this.readContracts();
+            await this.updateWalletBalance();
+        },
+        async buttonPress4() {
+            // Look up tx from the previous Deposit
+            const tokenObj = this.contractState.state.tokens.find( (token) => (token.txID === this.txAllowId) );
+    
+            const inputWd = {
+                function: "withdrawal",
+                txID: this.txAllowId,
+                target: tokenObj.source,
+                qty: this.transferQty
+            };
+            const originalTxWd = await this.contract.writeInteraction(inputWd);
+            console.log("WITHDRAWAL: " + JSON.stringify(originalTxWd));
+            
             // Now read both contracts again
             await this.readContracts();
             await this.updateWalletBalance();

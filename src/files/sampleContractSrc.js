@@ -104,6 +104,37 @@ async function handle(state, action) {
     }
     state.tokens.push(txObj);
   }
+  if (input.function === "withdrawal") {
+    const qty = input.qty;
+    const txID = input.txID;
+    const target = input.target;
+    if (!(qty) || !(qty > 0)) {
+        ThrowError("Error in input.  Quantity not supplied or is invalid.");
+    }
+    if (!txID) {
+        ThrowError("Error in input.  No Transaction ID found.");
+    }
+    if (!target) {
+        ThrowError("Error in input.  Target not supplied.");
+    }
+
+    // Get token object that the caller is trying to withdrawal
+    const tokenObj = state.tokens.find( (token) => (token.txID === txID) );
+
+    const inputTransfer = {
+        function: "transfer",
+        target: target,
+        qty: qty
+    };
+    const transferResult = await SmartWeave.contracts.write(tokenObj.tokenId, inputTransfer);
+
+    if (transferResult.type !== "ok") {
+        throw new ContractError("Unable to withdrawal token " + tokenObj.tokenId);
+    }
+
+    // Update vehicle's token object to reflect withdrawal
+    tokenObj.balance -= qty;
+  }
   if (input.function === "allow") {
     target = input.target;
     const quantity = input.qty;
