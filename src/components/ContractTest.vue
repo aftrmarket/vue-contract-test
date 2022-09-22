@@ -27,14 +27,19 @@
                 <vue-json-pretty :path="'res'" :data="contractStatePst" :showDoubleQuotes="false" :deep=3 :deepCollapseChildren="false" :showLength="true" :showSelectController="true"> </vue-json-pretty>
             </div>
         </div>
-            <div class="mt-2">
-                <input v-model="contractIdRead" type="text" placeholder="Enter Contract ID" class="input input-bordered w-96" /><br/>
-            </div>
-            <div><button @click="buttonPressRead" class="btn mt-2">4. Read PST Contract Again</button></div>
-            <div class="pt-4 w-full">
-                <vue-json-pretty :path="'res'" :data="contractStateRead" :showDoubleQuotes="false" :deep=3 :deepCollapseChildren="false" :showLength="true" :showSelectController="true"> </vue-json-pretty>
-            </div>
-        <div>
+        <div class="mt-2">
+            <input v-model="contractIdRead" type="text" placeholder="Enter Contract ID" class="input input-bordered w-96" /><br/>
+        </div>
+        <div><button @click="buttonPressRead" class="btn mt-2">5. Read PST Contract Again</button></div>
+        <div class="pt-4 w-full">
+            <vue-json-pretty :path="'res'" :data="contractStateRead" :showDoubleQuotes="false" :deep=3 :deepCollapseChildren="false" :showLength="true" :showSelectController="true"> </vue-json-pretty>
+        </div>
+        <div class="mt-2">
+            <input v-model="contractIdFromInput" type="text" placeholder="Enter Contract ID" class="input input-bordered w-96" /><br/>
+        </div>
+        <div><button @click="buttonPressReadFromInput" class="btn mt-2">Read Contract From Input</button></div>
+        <div class="pt-4 w-full">
+            <vue-json-pretty :path="'res'" :data="contractFromInputState" :showDoubleQuotes="false" :deep=3 :deepCollapseChildren="false" :showLength="true" :showSelectController="true"> </vue-json-pretty>
         </div>
     </div>
 </template>
@@ -49,6 +54,7 @@ import sampleContractSrc from "./../files/sampleContractSrc.js?raw";
 import { WarpFactory } from 'warp-contracts/web';
 import Arweave from "arweave";
 import { createContractFromTx, createContract, interactWrite, readContract } from "smartweave";
+import { warpInit, warpRead, warpWrite } from "./utils/warpUtils.js";
 import { vModelText } from 'vue';
 
 export default {
@@ -73,6 +79,9 @@ export default {
             contractStateRead: {},
             transferQty: 1,
             txAllowId: "",
+            contractIdFromInput: "",
+            contractFromInput: {},
+            contractFromInputState: {},
         };
     },
     computed: {
@@ -178,6 +187,7 @@ export default {
                 target: tokenObj.source,
                 qty: this.transferQty
             };
+            console.log("WITHDRAWAL INPUT: " + JSON.stringify(inputWd));
             const originalTxWd = await this.warpWrite(this.contract, inputWd);
             console.log("WITHDRAWAL: " + JSON.stringify(originalTxWd));
             
@@ -197,6 +207,13 @@ export default {
             this.contractRead = this.warpConnect(this.contractIdRead);
             let result = await this.contractRead.readState();
             this.contractStateRead = result.cachedValue;
+        },
+        async buttonPressReadFromInput() {
+            let warp = warpInit();
+            //this.contractFromInput = this.warpConnect(this.contractIdFromInput);
+            let result = await warpRead(warp, this.contractIdFromInput);
+            //let result = await this.contractFromInput.readState();
+            this.contractFromInputState = result;
         },
         async readContracts() {
             // Read AFTR contract
