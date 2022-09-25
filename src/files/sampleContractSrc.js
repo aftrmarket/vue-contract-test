@@ -131,7 +131,7 @@ async function handle(state, action) {
     if (transferResult.type !== "ok") {
         throw new ContractError("Unable to withdrawal token " + tokenObj.tokenId);
     }
-
+//state.transferResult = transferResult;
     // Update vehicle's token object to reflect withdrawal
     tokenObj.balance -= qty;
   }

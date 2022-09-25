@@ -13,33 +13,22 @@
             <div><button @click="buttonPress2" class="btn mt-2">2. Read Contracts</button></div>
         </div>
         <div class="flex flex-col mt-2 mb-4">
-            <div class="prose"><h3>Write Interactions - Deposit, then put back with a Withdrawal</h3></div>
+            <div class="prose"><h3>Write Interactions</h3></div>
             <div><button @click="buttonPress3" class="btn mt-2">3. Deposit Tokens</button></div>
             <div><button @click="buttonPress4" class="btn mt-2">4. Withdrawal Tokens</button></div>
         </div>
         <div class="grid grid-cols-2 gap-4 p-4 border">
             <div class="pt-4 w-full">
-                <p class="font-sans font-lg text-aftrBlue">AFTR Contract Snippet</p><br/>
+                <p class="font-sans font-lg text-aftrBlue">AFTR Contract Read</p><br/>
                 <vue-json-pretty :path="'res'" :data="contractState" :showDoubleQuotes="false" :deep=3 :deepCollapseChildren="false" :showLength="true" :showSelectController="true"> </vue-json-pretty>
             </div>
             <div class="pt-4 w-full">
-                <p class="font-sans font-lg text-aftrBlue">PST</p><br/>
-                <vue-json-pretty :path="'res'" :data="contractStatePst" :showDoubleQuotes="false" :deep=3 :deepCollapseChildren="false" :showLength="true" :showSelectController="true"> </vue-json-pretty>
+                <p class="font-sans font-lg text-aftrBlue">AFTR Contract Read Delayed</p><br/>
+                <vue-json-pretty :path="'res'" :data="contractStateDelayed" :showDoubleQuotes="false" :deep=3 :deepCollapseChildren="false" :showLength="true" :showSelectController="true"> </vue-json-pretty>
             </div>
         </div>
-        <div class="mt-2">
-            <input v-model="contractIdRead" type="text" placeholder="Enter Contract ID" class="input input-bordered w-96" /><br/>
-        </div>
-        <div><button @click="buttonPressRead" class="btn mt-2">5. Read PST Contract Again</button></div>
         <div class="pt-4 w-full">
-            <vue-json-pretty :path="'res'" :data="contractStateRead" :showDoubleQuotes="false" :deep=3 :deepCollapseChildren="false" :showLength="true" :showSelectController="true"> </vue-json-pretty>
-        </div>
-        <div class="mt-2">
-            <input v-model="contractIdFromInput" type="text" placeholder="Enter Contract ID" class="input input-bordered w-96" /><br/>
-        </div>
-        <div><button @click="buttonPressReadFromInput" class="btn mt-2">Read Contract From Input</button></div>
-        <div class="pt-4 w-full">
-            <vue-json-pretty :path="'res'" :data="contractFromInputState" :showDoubleQuotes="false" :deep=3 :deepCollapseChildren="false" :showLength="true" :showSelectController="true"> </vue-json-pretty>
+            <vue-json-pretty :path="'res'" :data="contractStatePst" :showDoubleQuotes="false" :deep=3 :deepCollapseChildren="false" :showLength="true" :showSelectController="true"> </vue-json-pretty>
         </div>
     </div>
 </template>
@@ -47,14 +36,11 @@
 <script>
 import VueJsonPretty from 'vue-json-pretty';
 import 'vue-json-pretty/lib/styles.css';
-import pstInitState from "./../files/pstInitState.json?raw";
-import sampleContractInitState from "./../files/sampleContractInitState.json?raw";
-import sampleContractSrc from "./../files/sampleContractSrc.js?raw";
+import sampleContractSrc from "./../files/sampleAftrContractSrc.js?raw";
 
 import { WarpFactory } from 'warp-contracts/web';
 import Arweave from "arweave";
 import { createContractFromTx, createContract, interactWrite, readContract } from "smartweave";
-import { warpInit, warpRead, warpWrite } from "./utils/warpUtils.js";
 import { vModelText } from 'vue';
 
 export default {
@@ -72,16 +58,50 @@ export default {
             contractState: {},
             contractIdPst: "",
             contractStatePst: {},
-            jwk: {},
             walletAddress: "",
-            contractIdRead: "",
-            contractRead: {},
-            contractStateRead: {},
-            transferQty: 1,
+            transferQty: 500,
             txAllowId: "",
-            contractIdFromInput: "",
-            contractFromInput: {},
-            contractFromInputState: {},
+            contractStateDelayed: {},
+            aftrContractId: "",
+            vehicleTemplate: {
+                "name": "",
+                "ticker": "",
+                "balances": {},
+                "tokens": [],
+                "vault": {},
+                "votes": [],
+                "status": "started",
+                "creator" : "",
+                "ownership" : "single",
+                "votingSystem" : "weighted",
+                "claims": [],
+                "claimable": [],
+                "settings": [
+                    [ "quorum", 0.5 ],
+                    [ "support", 0.5 ],
+                    [ "voteLength", 2160 ],
+                    [ "communityLogo", "" ],
+                    [ "evolve", null ]
+                ]
+            },
+
+            pstTemplate: {
+                "name": "Vint",
+                "ticker": "VINT",
+                "balances": {},
+                "claimable": [],
+                "claims": [],
+                "settings": [
+                [ "quorum", 0.5 ],
+                [ "support", 0.5 ],
+                [ "voteLength", 2160 ],
+                [ "lockMinLength", 129600 ],
+                [ "lockMaxLength", 1051200 ],
+                [ "communityAppUrl", "" ],
+                [ "communityDiscussionLinks", [ "" ] ],
+                [ "communityDescription", "" ],
+                [ "communityLogo", "" ] ]
+            },
         };
     },
     computed: {
@@ -91,86 +111,100 @@ export default {
     },
     methods: {
         async buttonPress1() {
+            this.resetOutputs();
 
-        // Try to get wallet, if fails, connect so user can assign permissions
-        let wallet = {
-            address: "",
-        };
-        try {
-            wallet.address = await window.arweaveWallet.getActiveAddress();
-        } catch(e) {
-            console.log(e);
-            const promiseResult = await window.arweaveWallet.connect([
-                "ACCESS_ADDRESS",
-                "ACCESS_ALL_ADDRESSES",
-                "SIGN_TRANSACTION",
-                "ACCESS_ARWEAVE_CONFIG",
-            ]);
-            wallet.address = await window.arweaveWallet.getActiveAddress();
-        }
+            // Try to get wallet, if fails, connect so user can assign permissions
+            let wallet = {
+                address: "",
+            };
+            try {
+                wallet.address = await window.arweaveWallet.getActiveAddress();
+            } catch(e) {
+                console.log(e);
+                const promiseResult = await window.arweaveWallet.connect([
+                    "ACCESS_ADDRESS",
+                    "ACCESS_ALL_ADDRESSES",
+                    "SIGN_TRANSACTION",
+                    "ACCESS_ARWEAVE_CONFIG",
+                ]);
+                wallet.address = await window.arweaveWallet.getActiveAddress();
+            }
 
             if (this.network !== "local") {
                 alert("Test app is currently only configured to run on an Arlocal instance.");
                 return;
             }
-            //this.addr = await this.arweave.wallets.jwkToAddress("use_wallet");
+
             this.addr = wallet.address;
             await this.updateWalletBalance();
             await this.mintTokens();
             this.warpInit();
 
-            // Deploy Sample AFTR Contract
-            // try {
-            //     let tx = await this.warp.createContract.deploy({
-            //         wallet: "use_wallet",
-            //         initState: sampleContractInitState,
-            //         src: sampleContractSrc
-            //     });
-            //     this.contractId = tx.contractTxId;
-            // } catch(e) {
-            //     console.log("ERROR deploying AFTR contract: " + e);
-            //     return;
-            // }
-
-            // Deploy PST Contract
-            // try {
-            //     let tx = await this.warp.createContract.deploy({
-            //         wallet: this.jwk,
-            //         initState: pstInitState,
-            //         src: sampleContractSrc
-            //     });
-            //     this.contractIdPst = tx.contractTxId;
-            // } catch(e) {
-            //     console.log("ERROR deploying PST contract: " + e);
-            //     return;
-            // }
-
-            // Create new contracts
-            this.contractId = await createContract(this.arweave, "use_wallet", sampleContractSrc, sampleContractInitState);
-            const aftrContractSrcId = await this.getContractSourceId(this.contractId);
-
-            // Test using createContractFromTx
+            // Create sample AFTR Vehicle from source
             let swTags = [{ name: "Protocol", value: "TEST" }];
-            this.contractIdPst = await createContractFromTx(this.arweave, "use_wallet", aftrContractSrcId, pstInitState, swTags);
-            this.contractIdRead = this.contractIdPst;
-
-            // Test using createContract
-            //this.contractIdPst = await createContract(this.arweave, "use_wallet", sampleContractSrc, pstInitState);
-
-            // Use hard-coded values for contracts
-            // this.contractId = "ksc9xhdFtg_VMv19ZGPEumhKcVzDvK2Zqm6yIoyCWO8";
-            // this.contractIdPst = "j8e-3qNnLSQRPNB1pN84zy0XKEmAyo7cKIcxqVGaPDw";
             
+            // Init state defaults
+            this.vehicleTemplate.name = "Sample AFTR Vehicle";
+            this.vehicleTemplate.ticker = "AFTR";
+            this.vehicleTemplate.creator = this.addr;
+            this.vehicleTemplate.balances[this.addr] = 1;
+
+            // Create AFTR source contract
+            this.contractId = await createContract(this.arweave, "use_wallet", sampleContractSrc, JSON.stringify(this.vehicleTemplate));
+            const aftrContractSrcId = await this.getContractSourceId(this.contractId);
+            
+            // Create PST contract, give user 1000 tokens.
+            this.pstTemplate.balances[this.addr] = 1000;
+            this.contractIdPst = await createContract(this.arweave, "use_wallet", sampleContractSrc, JSON.stringify(this.pstTemplate));
+
             await this.updateWalletBalance();
         },
         async buttonPress2() {
             if (this.contractId === "" || this.contractIdPst === "") {
+                alert("No contracts to read!");
                 return;
             }
+            this.$swal({
+                icon: "info",
+                html: "Reading Contracts.  The right side is the same AFTR contract just delayed 5 seconds.",
+                showConfirmButton: false,
+                allowOutsideClick: false,
+                didOpen: () => {
+                    this.$swal.showLoading()
+                },
+            });
+            this.resetOutputs();
             await this.readContracts();
             await this.updateWalletBalance();
+            this.$swal.close();
         },
         async buttonPress3() {
+            this.$swal({
+                icon: "info",
+                html: "Deposit Interactions, then reading the contracts again...",
+                showConfirmButton: false,
+                allowOutsideClick: false,
+                didOpen: () => {
+                    this.$swal.showLoading()
+                },
+            });
+            this.resetOutputs();
+            // Give another wallet a balance
+            let inputMint = {
+                function: "plygnd-mint",
+                qty: 100
+            };
+            //let txMint = await this.warpWrite(this.contract, inputMint);
+            let txMint  = await this.contract.writeInteraction(inputMint);
+            console.log("PLAYGROUND MINT: " + JSON.stringify(txMint));
+
+            inputMint = {
+                function: "plygnd-mint",
+                qty: 100
+            };
+            txMint  = await this.contract.writeInteraction(inputMint);
+            console.log("PLAYGROUND MINT: " + JSON.stringify(txMint));
+
             // Setup claim on PST contract
             const inputAllow = {
                 function: "allow",
@@ -195,44 +229,47 @@ export default {
             // Now read both contracts again
             await this.readContracts();
             await this.updateWalletBalance();
+            this.$swal.close();
         },
         async buttonPress4() {
+            this.$swal({
+                icon: "info",
+                html: "Withdrawal Interaction, with a read following...",
+                showConfirmButton: false,
+                allowOutsideClick: false,
+                didOpen: () => {
+                    this.$swal.showLoading()
+                },
+            });
+
             // Look up tx from the previous Deposit
             const tokenObj = this.contractState.state.tokens.find( (token) => (token.txID === this.txAllowId) );
-    
+
             const inputWd = {
-                function: "withdrawal",
+                function: "propose",
+                type: "withdrawal",
                 txID: this.txAllowId,
                 target: tokenObj.source,
-                qty: this.transferQty
+                qty: 2
             };
+
+            this.resetOutputs();
+
             console.log("WITHDRAWAL INPUT: " + JSON.stringify(inputWd));
             const originalTxWd = await this.warpWrite(this.contract, inputWd);
             console.log("WITHDRAWAL: " + JSON.stringify(originalTxWd));
             
-            // Now read both contracts again
             await this.readContracts();
-            await this.updateWalletBalance();
-        },
-        async buttonPressRead() {
-            if (this.contractIdRead === "") {
-                return;
-            }
+            this.$swal.close();
 
-            /*** THE NEXT TIME WARP GETS INITIALIZED, THE CLAIMS CHANGE WHEN THE CONTRACT IS READ! */
-            this.warpInit();
+            this.$swal({
+                icon: "error",
+                html: "Look at the token object.  The balance is showing a different amount.  The JSON objects being displayed come from 1 readState() just with a of 5 seconds.  This shows that the result changes after it's read initially.",
+                showConfirmButton: true,
+                allowOutsideClick: false,
+            });
 
-            // Read contract from textbox ID
-            this.contractRead = this.warpConnect(this.contractIdRead);
-            let result = await this.contractRead.readState();
-            this.contractStateRead = result.cachedValue;
-        },
-        async buttonPressReadFromInput() {
-            let warp = warpInit();
-            //this.contractFromInput = this.warpConnect(this.contractIdFromInput);
-            let result = await warpRead(warp, this.contractIdFromInput);
-            //let result = await this.contractFromInput.readState();
-            this.contractFromInputState = result.state;
+            
         },
         async readContracts() {
             // Read AFTR contract
@@ -242,24 +279,12 @@ export default {
 
             // Read PST contract
             this.contractPst = this.warpConnect(this.contractIdPst);
-            
-            // Mint tokens for user on PST contract
-            let input = {
-                function: "mint",
-                qty: 10000
-            };
+            let resultPst = await this.contractPst.readState();
+            this.contractStatePst = resultPst.cachedValue; 
 
-            // Using Warp
-            let mintTx = await this.contractPst.writeInteraction(input);
-            console.log("MINT TX: " + mintTx.originalTxId);
-
-            // Using SmartWeave
-            // let mintTx = await interactWrite(this.arweave, "use_wallet", this.contractIdPst, input);
-            // await fetch("http://localhost:1984/mine");
-            //console.log("MINT TX: " + mintTx);
-
-            result = await this.contractPst.readState();
-            this.contractStatePst = result.cachedValue;   
+            // Look at AFTR contract again
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            this.contractStateDelayed = result.cachedValue;
         },
         warpInit() {
             try {
@@ -299,6 +324,11 @@ export default {
                 return {};
             }
         },
+        resetOutputs() {
+            this.contractState = {};
+            this.contractState = {};
+            this.contractStatePst = {};
+        },
         async mintTokens() {
             try {
                 // Amounts are in Winstons
@@ -336,6 +366,5 @@ export default {
             timeout: 20000,
             logging: true,
         });
-    },
-}
+    },}
 </script>

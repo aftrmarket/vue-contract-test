@@ -1,10 +1,10 @@
 <template>
     <html data-theme="emerald">
-      <contract-test></contract-test>
+      <contract-test-aftr></contract-test-aftr>
     </html>
 </template>
     
 <script setup>
-import ContractTest from './components/ContractTest.vue';
+import ContractTestAftr from './components/ContractTestAftr.vue';
 </script>
     
