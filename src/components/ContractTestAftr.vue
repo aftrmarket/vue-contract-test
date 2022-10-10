@@ -24,7 +24,7 @@
             </div>
             <div class="pt-4 w-full">
                 <p class="font-sans font-lg text-aftrBlue">AFTR Contract Read Delayed</p><br/>
-                <vue-json-pretty :path="'res'" :data="contractStateDelayed" :showDoubleQuotes="false" :deep=3 :deepCollapseChildren="false" :showLength="true" :showSelectController="true"> </vue-json-pretty>
+                <vue-json-pretty :path="'res'" :data="contractState2" :showDoubleQuotes="false" :deep=3 :deepCollapseChildren="false" :showLength="true" :showSelectController="true"> </vue-json-pretty>
             </div>
         </div>
         <div class="pt-4 w-full">
@@ -56,6 +56,9 @@ export default {
             network: "local",
             contractId: "",
             contractState: {},
+            contractId2: "",
+            contractState2: {},
+            contract2: {},
             contractIdPst: "",
             contractStatePst: {},
             walletAddress: "",
@@ -152,6 +155,16 @@ export default {
             // Create AFTR source contract
             this.contractId = await createContract(this.arweave, "use_wallet", sampleContractSrc, JSON.stringify(this.vehicleTemplate));
             const aftrContractSrcId = await this.getContractSourceId(this.contractId);
+
+            let tx = await this.warp.createContract.deploy({
+                wallet: "use_wallet",
+                initState: JSON.stringify(this.vehicleTemplate),
+                src: sampleContractSrc
+            });
+            this.contractId2 = tx.contractTxId;
+
+
+
             
             // Create PST contract, give user 1000 tokens.
             this.pstTemplate.balances[this.addr] = 1000;
@@ -164,15 +177,15 @@ export default {
                 alert("No contracts to read!");
                 return;
             }
-            this.$swal({
-                icon: "info",
-                html: "Reading Contracts.  The right side is the same AFTR contract just delayed 5 seconds.",
-                showConfirmButton: false,
-                allowOutsideClick: false,
-                didOpen: () => {
-                    this.$swal.showLoading()
-                },
-            });
+            // this.$swal({
+            //     icon: "info",
+            //     html: "Reading Contracts.  The right side is the same AFTR contract just delayed 5 seconds.",
+            //     showConfirmButton: false,
+            //     allowOutsideClick: false,
+            //     didOpen: () => {
+            //         this.$swal.showLoading()
+            //     },
+            // });
             this.resetOutputs();
             await this.readContracts();
             await this.updateWalletBalance();
@@ -276,6 +289,7 @@ export default {
             this.contract = this.warpConnect(this.contractId);
             let result = await this.contract.readState();
             this.contractState = result.cachedValue;
+            console.log("Contract 1: " + this.contractId);
 
             // Read PST contract
             this.contractPst = this.warpConnect(this.contractIdPst);
@@ -283,8 +297,12 @@ export default {
             this.contractStatePst = resultPst.cachedValue; 
 
             // Look at AFTR contract again
-            await new Promise(resolve => setTimeout(resolve, 5000));
-            this.contractStateDelayed = result.cachedValue;
+            // await new Promise(resolve => setTimeout(resolve, 5000));
+            // this.contractStateDelayed = result.cachedValue;
+            this.contract2 = this.warpConnect(this.contractId2);
+            result = await this.contract2.readState();
+            this.contractState2 = result.cachedValue;
+            console.log("Contract 2: " + this.contractId2);
         },
         warpInit() {
             try {

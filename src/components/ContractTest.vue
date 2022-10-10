@@ -45,17 +45,14 @@
 </template>
 
 <script>
+import Transaction from 'arweave/node/lib/transaction';
 import VueJsonPretty from 'vue-json-pretty';
 import 'vue-json-pretty/lib/styles.css';
 import pstInitState from "./../files/pstInitState.json?raw";
 import sampleContractInitState from "./../files/sampleContractInitState.json?raw";
 import sampleContractSrc from "./../files/sampleContractSrc.js?raw";
-
-import { WarpFactory } from 'warp-contracts/web';
-import Arweave from "arweave";
-import { createContractFromTx, createContract, interactWrite, readContract } from "smartweave";
-import { warpInit, warpRead, warpWrite } from "./utils/warpUtils.js";
-import { vModelText } from 'vue';
+import { createContract, createContractFromTx } from "smartweave";
+import { arweaveInit, warpCreateContract, warpCreateFromTx, warpInit, warpRead, warpWrite } from "./utils/warpUtils.js";
 
 export default {
     components: { VueJsonPretty },
@@ -91,23 +88,24 @@ export default {
     },
     methods: {
         async buttonPress1() {
-
-        // Try to get wallet, if fails, connect so user can assign permissions
-        let wallet = {
-            address: "",
-        };
-        try {
-            wallet.address = await window.arweaveWallet.getActiveAddress();
-        } catch(e) {
-            console.log(e);
-            const promiseResult = await window.arweaveWallet.connect([
-                "ACCESS_ADDRESS",
-                "ACCESS_ALL_ADDRESSES",
-                "SIGN_TRANSACTION",
-                "ACCESS_ARWEAVE_CONFIG",
-            ]);
-            wallet.address = await window.arweaveWallet.getActiveAddress();
-        }
+            this.arweave = arweaveInit();
+            
+            // Try to get wallet, if fails, connect so user can assign permissions
+            let wallet = {
+                address: "",
+            };
+            try {
+                wallet.address = await window.arweaveWallet.getActiveAddress();
+            } catch(e) {
+                console.log(e);
+                const promiseResult = await window.arweaveWallet.connect([
+                    "ACCESS_ADDRESS",
+                    "ACCESS_ALL_ADDRESSES",
+                    "SIGN_TRANSACTION",
+                    "ACCESS_ARWEAVE_CONFIG",
+                ]);
+                wallet.address = await window.arweaveWallet.getActiveAddress();
+            }
 
             if (this.network !== "local") {
                 alert("Test app is currently only configured to run on an Arlocal instance.");
@@ -117,42 +115,32 @@ export default {
             this.addr = wallet.address;
             await this.updateWalletBalance();
             await this.mintTokens();
-            this.warpInit();
 
             // Deploy Sample AFTR Contract
-            // try {
-            //     let tx = await this.warp.createContract.deploy({
-            //         wallet: "use_wallet",
-            //         initState: sampleContractInitState,
-            //         src: sampleContractSrc
-            //     });
-            //     this.contractId = tx.contractTxId;
-            // } catch(e) {
-            //     console.log("ERROR deploying AFTR contract: " + e);
-            //     return;
-            // }
+            let txIds = await warpCreateContract(sampleContractSrc, sampleContractInitState);
+            const aftrContractSrcId = txIds.srcTxId;
+            this.contractId = txIds.contractTxId;
+            //let compareId = await this.getContractSourceId(this.contractId);
+            //console.log("COMPARE SRC ID: " + compareId);
+            await this.getTags(this.contractId);
 
             // Deploy PST Contract
-            // try {
-            //     let tx = await this.warp.createContract.deploy({
-            //         wallet: this.jwk,
-            //         initState: pstInitState,
-            //         src: sampleContractSrc
-            //     });
-            //     this.contractIdPst = tx.contractTxId;
-            // } catch(e) {
-            //     console.log("ERROR deploying PST contract: " + e);
-            //     return;
-            // }
+            let swTags = [{ name: "PP", value: "Poop" }];
+            txIds = await warpCreateFromTx(pstInitState, aftrContractSrcId, swTags);
+            this.contractIdPst = txIds.contractTxId;
+            //compareId = await this.getContractSourceId(this.contractId);
+            //console.log("COMPARE SRC ID: " + compareId);
+
+            await this.getTags(this.contractIdPst);
 
             // Create new contracts
-            this.contractId = await createContract(this.arweave, "use_wallet", sampleContractSrc, sampleContractInitState);
-            const aftrContractSrcId = await this.getContractSourceId(this.contractId);
+            //this.contractId = await createContract(this.arweave, "use_wallet", sampleContractSrc, sampleContractInitState);
+            //const aftrContractSrcId = await this.getContractSourceId(this.contractId);
 
             // Test using createContractFromTx
-            let swTags = [{ name: "Protocol", value: "TEST" }];
-            this.contractIdPst = await createContractFromTx(this.arweave, "use_wallet", aftrContractSrcId, pstInitState, swTags);
-            this.contractIdRead = this.contractIdPst;
+            //let swTags = [{ name: "Protocol", value: "TEST" }];
+            //this.contractIdPst = await createContractFromTx(this.arweave, "use_wallet", aftrContractSrcId, pstInitState, swTags);
+            //this.contractIdRead = this.contractIdPst;
 
             // Test using createContract
             //this.contractIdPst = await createContract(this.arweave, "use_wallet", sampleContractSrc, pstInitState);
@@ -167,6 +155,7 @@ export default {
             if (this.contractId === "" || this.contractIdPst === "") {
                 return;
             }
+
             await this.readContracts();
             await this.updateWalletBalance();
         },
@@ -178,8 +167,10 @@ export default {
                 qty: this.transferQty,
             };
     
-            const { originalTxId, allowTxId } = await this.contractPst.writeInteraction(inputAllow);
-            this.txAllowId = originalTxId;
+            //const { originalTxId, allowTxId } = await this.contractPst.writeInteraction(inputAllow);
+            //this.txAllowId = originalTxId;
+
+            this.txAllowId = await warpWrite(this.contractIdPst, inputAllow);
 
             // Call AFTR contract to claim the tokens and update the AFTR vehicle tokens object
             const inputDeposit = {
@@ -189,7 +180,10 @@ export default {
                 txID: this.txAllowId,
             };
 
-            const originalTxIdDep  = await this.contract.writeInteraction(inputDeposit);
+            // const originalTxIdDep  = await this.contract.writeInteraction(inputDeposit);
+            
+            const originalTxIdDep = await warpWrite(this.contractId, inputDeposit);            
+            
             console.log("DEPOSIT: " + JSON.stringify(originalTxIdDep));
 
             // Now read both contracts again
@@ -236,68 +230,12 @@ export default {
         },
         async readContracts() {
             // Read AFTR contract
-            this.contract = this.warpConnect(this.contractId);
-            let result = await this.contract.readState();
-            this.contractState = result.cachedValue;
+            let result = await warpRead(this.contractId);
+            this.contractState = result;
 
             // Read PST contract
-            this.contractPst = this.warpConnect(this.contractIdPst);
-            
-            // Mint tokens for user on PST contract
-            let input = {
-                function: "mint",
-                qty: 10000
-            };
-
-            // Using Warp
-            let mintTx = await this.contractPst.writeInteraction(input);
-            console.log("MINT TX: " + mintTx.originalTxId);
-
-            // Using SmartWeave
-            // let mintTx = await interactWrite(this.arweave, "use_wallet", this.contractIdPst, input);
-            // await fetch("http://localhost:1984/mine");
-            //console.log("MINT TX: " + mintTx);
-
-            result = await this.contractPst.readState();
-            this.contractStatePst = result.cachedValue;   
-        },
-        warpInit() {
-            try {
-                // Using Warp
-                if (this.network === "mainnet") {
-                    this.warp = WarpFactory.forMainnet();
-                } else if (this.network === "testnet") {
-                    this.warp = WarpFactory.forTestnet();
-                } else if (this.network === "local") {
-                    this.warp = WarpFactory.forLocal();
-                }
-                console.log("Warp Initialized");
-            } catch(e) {
-                console.log(e);
-                return;
-            }
-        },
-        warpConnect(contractId) {
-            try {
-                const contract = this.warp.contract(contractId)
-                    .setEvaluationOptions({ 
-                        internalWrites: true,
-                     })
-                    .connect("use_wallet");
-                return contract;
-            } catch (e) {
-                console.log(e);
-                return {};
-            }
-        },
-        async warpWrite(contract, input) {
-            try {
-                const originalTx = await contract.writeInteraction(input);
-                return originalTx;
-            } catch(e) {
-                console.log("ERROR performing write interaction: " + e);
-                return {};
-            }
+            result = await warpRead(this.contractIdPst);
+            this.contractStatePst = result;
         },
         async mintTokens() {
             try {
@@ -311,6 +249,7 @@ export default {
         },
         async updateWalletBalance() {
             // Show how wallet is impacted after every transaction
+            await new Promise(resolve => setTimeout(resolve, 2000));
             this.walletBalance = await this.arweave.wallets.getBalance(this.addr);
         },
         async getContractSourceId(txID) {
@@ -327,15 +266,20 @@ export default {
                 }
             }
         },
-    },
-    async mounted() {
-        this.arweave = await Arweave.init({
-            host: "localhost",
-            port: "1984",
-            protocol: "http",
-            timeout: 20000,
-            logging: true,
-        });
+        async getTags(txId) {
+            const route = "http://localhost:1984/tx/" + txId;
+            let response = await fetch(route).then(res=> res.json());
+            const tx = new Transaction((await response));
+            
+            let allTags = [];
+            tx.get("tags").forEach((tag) => {
+                let key = tag.get("name", {decode: true, string: true});
+                let value = tag.get("value", {decode: true, string: true});
+                allTags.push({key, value});
+            });
+
+            console.log(JSON.stringify(allTags));
+        }
     },
 }
 </script>
