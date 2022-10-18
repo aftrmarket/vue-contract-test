@@ -55,23 +55,21 @@ async function warpWrite(contractId, input, internalWrites = true, bundling = fa
     }
 };
 
-async function warpCreateContract(source, initState, tags) {
+async function warpCreateContract(source, initState, currentTags, aftr = false) {
     /*** 
      * Returns:
      * { contractTxId: string, srcTxId: string }
      */
 
-    let aftrTag = { name: "Protocol", value: "TEST" };
-    if (!tags) {
-        tags = [];
+    let tags = [];
+    if (aftr) {
+        tags = aftrTags(currentTags);
     }
-    tags.push( aftrTag );
-
     const warp = warpInit();
     try {
         let txIds = await warp.createContract.deploy({
             wallet: "use_wallet",
-            initState: JSON.stringify(initState),
+            initState: initState,
             src: source,
             tags
         });
@@ -91,7 +89,7 @@ async function warpCreateFromTx(initState, srcId, tags) {
     try {
         let txIds = await warp.createContract.deployFromSourceTx({
             wallet: "use_wallet",
-            initState: JSON.stringify(initState),
+            initState: initState,
             srcTxId: srcId,
             tags
         });
@@ -111,6 +109,18 @@ function arweaveInit() {
         logging: true,
     });
     return arweave;
+};
+
+function aftrTags(currentTags, aftr = false) {
+    let tags = [];
+    if (currentTags) {
+        tags.push(currentTags);
+    }
+    tags.push( { name: "Protocol", value: "AFTR" } );
+    tags.push( { name: "Implements", value: ["ANS-110"] });
+    tags.push( { name: "Type", value: ["token", "vehicle"] } );
+
+    return tags;
 };
 
 export { warpInit, warpRead, warpWrite, warpCreateContract, warpCreateFromTx, arweaveInit };

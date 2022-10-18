@@ -82,12 +82,12 @@ export default {
                 return;
             }
 
-            this.$swal({
-                icon: "info",
-                html: "Creating 2 contracts, one using Warp deploy and the other using SmartWeave createContract.  You'll see that the write interaction will fail on the contract created from Warp.",
-                showConfirmButton: true,
-                allowOutsideClick: false
-            });
+            // this.$swal({
+            //     icon: "info",
+            //     html: "Creating 2 contracts, one using Warp deploy and the other using SmartWeave createContract.  You'll see that the write interaction will fail on the contract created from Warp.",
+            //     showConfirmButton: true,
+            //     allowOutsideClick: false
+            // });
 
             this.addr = wallet.address;
             await this.updateWalletBalance();
@@ -95,13 +95,15 @@ export default {
 
             /*** WARP */
             // Deploy Sample AFTR Contract
-            let txIds = await warpCreateContract(sampleContractSrc, sampleContractInitState);
+            let txIds = await warpCreateContract(sampleContractSrc, sampleContractInitState, undefined, true);
             this.contractId = txIds.contractTxId;
+            await this.getTags(this.contractId);
 
             /*** SmartWeave */
             //Create new contracts
             this.contractIdSw = await createContract(this.arweave, "use_wallet", sampleContractSrc, sampleContractInitState);
-            
+
+            await this.getTags(this.contractIdSw);
             await this.updateWalletBalance();
         },
         async buttonPress2() {
@@ -111,12 +113,6 @@ export default {
 
             await this.readContracts();
             await this.updateWalletBalance();
-            this.$swal({
-                icon: "info",
-                html: "Notice that readState returns differently.  The state value is a string for Warp and an object for SmartWeave.  Is this by design?",
-                showConfirmButton: true,
-                allowOutsideClick: false
-            });
         },
         async buttonPress3() {
             const input = {
@@ -131,13 +127,6 @@ export default {
             // Now read both contracts again
             await this.readContracts();
             await this.updateWalletBalance();
-
-            this.$swal({
-                icon: "info",
-                html: "Warp errors, while SmartWeave performs the 'mint' interaction.",
-                showConfirmButton: true,
-                allowOutsideClick: false
-            });
         },
         async readContracts() {
             // Read AFTR contract
@@ -163,6 +152,20 @@ export default {
             //await new Promise(resolve => setTimeout(resolve, 2000));
             this.walletBalance = await this.arweave.wallets.getBalance(this.addr);
         },
+        async getTags(txId) {
+            const route = "http://localhost:1984/tx/" + txId;
+            let response = await fetch(route).then(res=> res.json());
+            const tx = new Transaction((await response));
+            
+            let allTags = [];
+            tx.get("tags").forEach((tag) => {
+                let key = tag.get("name", {decode: true, string: true});
+                let value = tag.get("value", {decode: true, string: true});
+                allTags.push({key, value});
+            });
+
+            console.log(JSON.stringify(allTags));
+        }
     },
 }
 </script>
