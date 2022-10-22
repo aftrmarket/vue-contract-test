@@ -29,8 +29,6 @@ async function warpRead(contractId, internalWrites = true) {
                 internalWrites: internalWrites,
             });
         const result = await contract.readState();
-        console.log(typeof result);
-        //return JSON.parse(result.cachedValue.state);
         return result.cachedValue;
     } catch (e) {
         console.log(e);
@@ -100,6 +98,37 @@ async function warpCreateFromTx(initState, srcId, tags) {
     }
 };
 
+async function warpSaveNewSource(newSource) {
+    const warp = warpInit();
+    try {
+        //const newSrcTxId = await warp.contract.save({ src: newSource });
+        const newSrcTxId = await warp.contract.save({ 
+            contractSource: newSource, 
+            signer: "use_wallet"
+        });
+        return newSrcTxId;
+    } catch(e) {
+        console.log("ERROR saving new contract source: " + e);
+        return "";
+    }
+    
+};
+
+async function warpEvolve(contractId, evolveTxId) {
+    const warp = warpInit();
+    try {
+        const contract = warp.contract(contractId)
+        .setEvaluationOptions({ 
+            internalWrites: internalWrites
+         })
+        const result = await contract.evolve(srcTxId);
+        return result;
+    } catch(e) {
+        console.log("ERROR evolving: " + e);
+        return "";
+    }
+}
+
 function arweaveInit() {
     const arweave = Arweave.init({
         host: import.meta.env.VITE_HOST,
@@ -123,4 +152,4 @@ function aftrTags(currentTags, aftr = false) {
     return tags;
 };
 
-export { warpInit, warpRead, warpWrite, warpCreateContract, warpCreateFromTx, arweaveInit };
+export { warpInit, warpRead, warpWrite, warpCreateContract, warpCreateFromTx, warpSaveNewSource, warpEvolve, arweaveInit };
