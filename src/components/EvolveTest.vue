@@ -47,7 +47,7 @@ export default {
                 "vault": {},
                 "votes": [],
                 "status": "started",
-                "creator" : "",
+                "owner" : "",
                 "ownership" : "single",
                 "votingSystem" : "weighted",
                 "claims": [],

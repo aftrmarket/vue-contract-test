@@ -74,7 +74,7 @@ export default {
                 "vault": {},
                 "votes": [],
                 "status": "started",
-                "creator" : "",
+                "owner" : "",
                 "ownership" : "single",
                 "votingSystem" : "weighted",
                 "claims": [],
@@ -149,7 +149,7 @@ export default {
             // Init state defaults
             this.vehicleTemplate.name = "Sample AFTR Vehicle";
             this.vehicleTemplate.ticker = "AFTR";
-            this.vehicleTemplate.creator = this.addr;
+            this.vehicleTemplate.owner = this.addr;
             this.vehicleTemplate.balances[this.addr] = 1;
 
             // Create AFTR source contract

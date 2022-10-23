@@ -39,8 +39,8 @@ async function handle(state, action) {
     if (SmartWeave.contract.id === target2) {
       throw new ContractError("A vehicle token cannot be transferred to itself because it would add itself the balances object of the vehicle, thus changing the membership of the vehicle without a vote.");
     }
-    if (state.ownership === "single" && callerAddress === state.creator && balances[callerAddress] - qty <= 0) {
-      throw new ContractError("Invalid transfer because the creator's balance would be 0.");
+    if (state.ownership === "single" && callerAddress === state.owner && balances[callerAddress] - qty <= 0) {
+      throw new ContractError("Invalid transfer because the owner's balance would be 0.");
     }
     balances[callerAddress] -= qty;
     if (targetAddress in balances) {
