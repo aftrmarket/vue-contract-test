@@ -152,9 +152,7 @@ export default {
             }
             this.contractId = this.eContractId;
             await this.readContract();
-            await this.updateWalletBalance();
-            //await this.getContract();
-        },
+            await this.updateWalletBalance();        },
         async buttonPress2() {
             this.reset();
 
@@ -270,16 +268,14 @@ export default {
             if (this.network === "DEV") {
                 route = this.routeProtocol + "://" + this.routeHost + ":" + this.routePort + "/tx/" + txID;
                 response = await fetch(route).then(res=> res.json());
-                console.log(JSON.stringify(response));
                 this.tags = this.interactionTagsParser(response);
             } else {
                 route = `https://gateway.redstone.finance/gateway/contract?txId=${txID}&${this.network === "TEST" ? "testnet=true" : ""}`;
-
-                console.log(JSON.stringify(route));
                 response = await fetch(route);
                 
                 if (!response.ok) {
                     alert("Could not fetch contract.");
+                    return;
                 }
                 const data = await response.json();
                 if (data.contractTx == null || data.contractTx.tags == null) {
