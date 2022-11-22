@@ -1,15 +1,18 @@
 import { WarpFactory } from "warp-contracts/web";
 import Arweave from "arweave";
 
-function warpInit() {
+function warpInit(env = "") {
     let warp = {};
+    if (env === "") {
+        env = import.meta.env.VITE_ENV;
+    }
     try {
         // Using Warp
-        if (import.meta.env.VITE_ENV === "PROD") {
+        if (env === "PROD") {
             warp = WarpFactory.forMainnet();
-        } else if (import.meta.env.VITE_ENV === "TEST") {
+        } else if (env === "TEST") {
             warp = WarpFactory.forTestnet();
-        } else if (import.meta.env.VITE_ENV === "DEV") {
+        } else if (env === "DEV") {
             warp = WarpFactory.forLocal();
         } else {
             warp = WarpFactory.forTestnet();
@@ -20,8 +23,8 @@ function warpInit() {
     return warp;
 };
 
-async function warpRead(contractId, internalWrites = true) {
-    const warp = warpInit();
+async function warpRead(contractId, internalWrites = true, env = "") {
+    const warp = warpInit(env);
 
     try {
         const contract = warp.contract(contractId)
@@ -36,8 +39,8 @@ async function warpRead(contractId, internalWrites = true) {
     }
 };
 
-async function warpWrite(contractId, input, internalWrites = true, bundling = false) {
-    const warp = warpInit();
+async function warpWrite(contractId, input, internalWrites = true, bundling = false, env = "") {
+    const warp = warpInit(env);
     try {
         const contract = warp.contract(contractId)
         .setEvaluationOptions({ 
@@ -46,14 +49,16 @@ async function warpWrite(contractId, input, internalWrites = true, bundling = fa
          })
         .connect("use_wallet");
         const { originalTxId } = await contract.writeInteraction(input);
+        //const result = await contract.dryWrite(input);
         return originalTxId;
+        return result;
     } catch(e) {
         console.log(e);
         return "";
     }
 };
 
-async function warpCreateContract(source, initState, currentTags, aftr = false) {
+async function warpCreateContract(source, initState, currentTags, aftr = false, env = "") {
     /*** 
      * Returns:
      * { contractTxId: string, srcTxId: string }
@@ -63,7 +68,7 @@ async function warpCreateContract(source, initState, currentTags, aftr = false) 
     if (aftr) {
         tags = aftrTags(currentTags);
     }
-    const warp = warpInit();
+    const warp = warpInit(env);
     try {
         let txIds = await warp.createContract.deploy({
             wallet: "use_wallet",
@@ -78,12 +83,12 @@ async function warpCreateContract(source, initState, currentTags, aftr = false) 
     }
 };
 
-async function warpCreateFromTx(initState, srcId, tags) {
+async function warpCreateFromTx(initState, srcId, tags, env = "") {
     /*** 
      * Returns:
      * { contractTxId: string, srcTxId: string }
      */
-    const warp = warpInit();
+    const warp = warpInit(env);
     try {
         let txIds = await warp.createContract.deployFromSourceTx({
             wallet: "use_wallet",
@@ -98,13 +103,19 @@ async function warpCreateFromTx(initState, srcId, tags) {
     }
 };
 
-async function warpSaveNewSource(newSource) {
-    const warp = warpInit();
+async function warpSaveNewSource(contractId, newSource, env = "") {
+    const warp = warpInit(env);
     try {
         //const newSrcTxId = await warp.contract.save({ src: newSource });
-        const newSrcTxId = await warp.contract.save({ 
-            contractSource: newSource, 
-            signer: "use_wallet"
+
+        const contract = warp.contract(contractId)
+            .setEvaluationOptions({
+                internalWrites: true
+            })
+            .connect("use_wallet");
+
+        const newSrcTxId = await contract.save({ 
+            src: newSource
         });
         return newSrcTxId;
     } catch(e) {
@@ -114,14 +125,19 @@ async function warpSaveNewSource(newSource) {
     
 };
 
-async function warpEvolve(contractId, evolveTxId) {
-    const warp = warpInit();
+async function warpEvolve(contractId, evolveSrcId, env = "") {
+    const warp = warpInit(env);
+    let contract = {};
     try {
-        const contract = warp.contract(contractId)
-        .setEvaluationOptions({ 
-            internalWrites: internalWrites
-         })
-        const result = await contract.evolve(srcTxId);
+        contract = warp.contract(contractId)
+            .setEvaluationOptions({ internalWrites: true })
+            .connect("use_wallet");
+        } catch(e) {
+            console.log("ERROR connecting contract: " + e);
+            return "";
+        }
+    try {
+        const result = await contract.evolve(evolveSrcId);
         return result;
     } catch(e) {
         console.log("ERROR evolving: " + e);
@@ -129,12 +145,32 @@ async function warpEvolve(contractId, evolveTxId) {
     }
 }
 
-function arweaveInit() {
+function arweaveInit(env = "") {
+    let host = "";
+    let port = "";
+    let protocol = "";
+
+    if (env === "DEV") {
+        host = "localhost";
+        port = "1984";
+        protocol = "http";
+    } else if (env === "TEST") {
+        host = "arweave.net";
+        port = "443";
+        protocol = "https";
+    } else if (env === "PROD") {
+        host = "arweave.net";
+        port = "443";
+        protocol = "https";
+    } else {
+        host = import.meta.env.VITE_HOST;
+        port = import.meta.env.VITE_PORT;
+        protocol = import.meta.env.VITE_PROTOCOL;
+    }
+
     const arweave = Arweave.init({
-        host: import.meta.env.VITE_HOST,
-        port: import.meta.env.VITE_PORT,
-        protocol: import.meta.env.VITE_PROTOCOL,
-        timeout: 20000,
+        host, port, protocol, 
+        timeout: 2000, 
         logging: true,
     });
     return arweave;
@@ -145,7 +181,7 @@ function aftrTags(currentTags, aftr = false) {
     if (currentTags) {
         tags.push(currentTags);
     }
-    tags.push( { name: "Protocol", value: "AFTR" } );
+    tags.push( { name: "Protocol", value: import.meta.env.VITE_SMARTWEAVE_TAG_PROTOCOL } );
     tags.push( { name: "Implements", value: ["ANS-110"] });
     tags.push( { name: "Type", value: ["token", "vehicle"] } );
 

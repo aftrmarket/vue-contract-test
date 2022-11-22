@@ -10,13 +10,8 @@
         </div>
         <div><button @click="buttonPress1" class="btn mt-2">1. Read Contract</button></div>
         <div>Contract Source ID: {{ contractSrcId }}</div>
-        <div>Evolve Source ID: {{ evolveSrcId }}</div>
-        <div>Evolve: {{ evolve }}</div>
         <div>New Source ID: {{ newSrcId }}</div>
         <div><button @click="buttonPress2" class="btn mt-2">2. Add New Source</button></div>
-        <div><button @click="buttonPress3" class="btn mt-2">3. Evolve</button></div>
-        <div><button @click="buttonPress4" class="btn mt-2">4. Test Evolve</button></div>
-        <div><button @click="buttonPress5" class="btn mt-2">5. Test Interaction</button></div>
         <div class="pt-4 w-full">
             <vue-json-pretty :path="'res'" :data="contractState" :showDoubleQuotes="false" :deep=3 :deepCollapseChildren="false" :showLength="true" :showSelectController="true"> </vue-json-pretty>
         </div>
@@ -28,7 +23,7 @@ import VueJsonPretty from 'vue-json-pretty';
 import 'vue-json-pretty/lib/styles.css';
 import { arweaveInit, warpCreateContract, warpCreateFromTx, warpInit, warpRead, warpWrite, warpSaveNewSource, warpEvolve } from "./utils/warpUtils.js";
 import Transaction from 'arweave/node/lib/transaction';
-import evolvedContractSrc from "./../files/evolvedContractSrc.js?raw";
+import newContractSrc from "./../files/aftrContractSrc.js?raw";
 export default {
     components: { VueJsonPretty },
     data() {
@@ -37,30 +32,7 @@ export default {
             contractId: "",
             contractState: {},
             contractSrcId: "",
-            evolveSrcId: "",
             newSrcId: "",
-            evolve: "",
-            vehicleTemplate: {
-                "name": "",
-                "ticker": "",
-                "balances": {},
-                "tokens": [],
-                "vault": {},
-                "votes": [],
-                "status": "started",
-                "owner" : "",
-                "ownership" : "single",
-                "votingSystem" : "weighted",
-                "claims": [],
-                "claimable": [],
-                "settings": [
-                    [ "quorum", 0.5 ],
-                    [ "support", 0.5 ],
-                    [ "voteLength", 2160 ],
-                    [ "communityLogo", "" ],
-                    [ "evolve", null ]
-                ]
-            }
         };
     },
     computed: {
@@ -69,14 +41,9 @@ export default {
 
 /*** 
  * 1. Read contract (from input)
- * 2. Get contract source
- * 3. Create new contract source (using save)
- * 4. Evolve contract to new source
- * 5. Read contract again
- * 6. Test input to see if contract is on new source
- * 7. Read contract again
- * 8. See what is now listed as contract source (after the evolve)
- * 
+ *      Get contract source
+ * 2. Create new contract source (using save)
+ *      Get printout new contract source ID
  */
     methods: {
         async buttonPress1() {
@@ -88,43 +55,10 @@ export default {
             this.contractSrcId = await this.getContractSourceId(this.contractId);
         },
         async buttonPress2() {
-            /*** NOT WORKING - ASKING REDSTONE */
-            this.evolveSrcId = await warpSaveNewSource(this.contractId, evolvedContractSrc);
+            this.newSrcId = await warpSaveNewSource(this.contractId, newContractSrc);
 
             //const txIds = await warpCreateContract(evolvedContractSrc, JSON.stringify(this.vehicleTemplate), undefined, true);
             //this.evolveSrcId = txIds.srcTxId;
-        },
-        async buttonPress3() {
-            // Evolve the contract
-            const evolveTx = await warpEvolve(this.contractId, evolvedContractSrc);
-            console.log("evolveTx: " + JSON.stringify(evolveTx));
-            this.evolveSrcId = evolveTx.originalTxId;
-
-            // Read state
-            // const result = await warpRead(this.contractId);
-            // this.contractState = result;
-            //this.contractSrcId = await this.getContractSourceId(this.contractId);
-        },
-        async buttonPress4() {
-            /*** Try to call playground function.
-             * If it fails, then that means that the contract is now using on the evolved source.
-             */
-
-             const input = {
-                function: "testEvolve"
-             };
-             const writeTx = await warpWrite(this.contractId, input);
-             console.log("writeTx: " + writeTx);
-        },
-        async buttonPress5() {
-            const input = {
-                function: 'propose',
-                type: 'set',
-                key: 'ticker',
-                value: 'BL'
-            };
-             const writeTx = await warpWrite(this.contractId, input);
-             console.log("writeTx: " + writeTx);
         },
         async getContractSourceId(txID) {
             const route = "http://localhost:1984/tx/" + txID;

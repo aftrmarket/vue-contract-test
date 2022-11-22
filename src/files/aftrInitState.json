@@ -1,0 +1,26 @@
+{
+    "name" : "AFTR-BASE",
+    "ticker" : "AFTR-BASE",
+    "balances" : {
+        "jODiNLPm9b6byToAGdc0zoiyDITzgJNGkB0Icq8fpe0" : 1
+    },
+    "owner" : "jODiNLPm9b6byToAGdc0zoiyDITzgJNGkB0Icq8fpe0",
+    "ownership" : "single",
+    "votingSystem": "weighted",
+    "status" : "started",
+    "vault" : {},
+    "votes": [],
+    "claimable": [],
+    "claims": [],
+    "evolve": "",
+    "settings" : [
+        [ "quorum", 0.5 ],
+        [ "support", 0.5],
+        [ "voteLength", 2000 ],
+        [ "communityAppUrl", "https://aftr.market" ],
+        [ "communityDiscussionLinks", "" ],
+        [ "communityDescription", "The AFTR Protocol Base contract." ],
+        [ "communityLogo", "1RgJQENTmMlYxlL4I3BS9gnMasztmxpcXvRVhpsw4Oc"],
+        [ "version", "a001"]
+    ]
+}

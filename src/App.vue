@@ -5,6 +5,6 @@
 </template>
     
 <script setup>
-import ContractTest from './components/EvolveTest.vue';
+import ContractTest from './components/ContractCreate.vue';
 </script>
     

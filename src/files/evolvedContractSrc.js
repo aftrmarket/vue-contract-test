@@ -18,6 +18,11 @@ async function handle(state, action) {
     }
   }
   const block = +SmartWeave.block.height;
+
+if (input.function === "testEvolve") {
+    state.evolveTest = "SUCCESSFUL!";
+}
+
   if (input.function === "balance") {
     target = isArweaveAddress(input.target || caller);
     if (typeof target !== "string") {
