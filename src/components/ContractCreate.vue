@@ -270,19 +270,15 @@ export default {
                 response = await fetch(route).then(res=> res.json());
                 this.tags = this.interactionTagsParser(response);
             } else {
-                route = `https://gateway.redstone.finance/gateway/contract?txId=${txID}&${this.network === "TEST" ? "testnet=true" : ""}`;
+                route = `https://gateway.redstone.finance/gateway/contract?txId=${txID}${this.network === "TEST" ? "&testnet=true" : ""}`;
                 response = await fetch(route);
-                
                 if (!response.ok) {
                     alert("Could not fetch contract.");
                     return;
                 }
                 const data = await response.json();
-                if (data.contractTx == null || data.contractTx.tags == null) {
-                    this.tags = null;
-                } else {
-                    this.tags = this.interactionTagsParser(data.contractTx);
-                }
+                console.log(data.srcTxId);
+                return data.srcTxId;
             }
 
             for (let i = 0; i < this.tags.length; i++) {
