@@ -277,7 +277,6 @@ export default {
                     return;
                 }
                 const data = await response.json();
-                console.log(data.srcTxId);
                 return data.srcTxId;
             }
 
