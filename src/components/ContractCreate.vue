@@ -43,6 +43,7 @@ export default {
     components: { VueJsonPretty },
     data() {
         return {
+            aftrContractSrcs: import.meta.env.VITE_AFTR_CONTRACT_SOURCES,
             network: "",
             contractId: "",
             eContractId: "",
@@ -151,8 +152,12 @@ export default {
                 return;
             }
             this.contractId = this.eContractId;
-            await this.readContract();
-            await this.updateWalletBalance();        },
+            //this.contractSrcId = await this.returnContractSrc(this.contractId);
+            // await this.readContract();
+            // await this.updateWalletBalance();
+            console.log(await this.findIdType(this.contractId));
+            
+        },
         async buttonPress2() {
             this.reset();
 
@@ -296,6 +301,106 @@ export default {
             });
             return tags;
         },
+        async returnContractSrc(contractId) {
+            const arweave = arweaveInit(this.network);
+            let tx = await arweave.transactions.get(contractId);
+            let contractSrcId = "";
+
+            tx.get('tags').every(tag => {
+                let key = tag.get('name', {decode: true, string: true});
+                let value = tag.get('value', {decode: true, string: true});
+                if (key === "Contract-Src") {
+                    contractSrcId = value;
+                    return false;
+                }
+                return true;
+            });
+            return contractSrcId;
+        },
+        parseTags(txId) {
+            const tx = new Transaction(txId);
+            let txType = "";
+            let smartweaveContract = false;
+            let aftrVehicle = false;
+            console.log(tx);
+            for (let tag of tx.tags) {
+                let key = tag.get("name", {decode: true, string: true});
+                let value = tag.get('value', {decode: true, string: true});
+                if (key === "App-Name" && value === "SmartWeaveContract") {
+                    smartweaveContract = true;
+                }
+                if (key === "Protocol" && value === import.meta.env.VITE_SMARTWEAVE_TAG_PROTOCOL) {
+                    aftrVehicle = true;
+                }
+            }
+
+            if (aftrVehicle) {
+                txType = "AFTR Vehicle";
+            } else if (smartweaveContract) {
+                txType = "SmartWeave Contract";
+            } else {
+                txType = "UNSURE";
+            }
+
+            return txType;
+        },
+        async findIdType(id) {
+            const arweave = arweaveInit();
+            let txType = "";
+            if (this.network === "DEV") {
+                try {
+                    const route = this.routeProtocol + "://" + this.routeHost + ":" + this.routePort + "/tx/" + id;
+                    let response = await fetch(route).then(res=> res.json());
+                    console.log(JSON.stringify(response));
+                    txType = this.parseTags(response);
+                } catch(e) {
+                    console.log("ERROR when getting the tx. " + e);
+                    txType = "UNSURE";
+                }
+            } else {
+                const route = `https://gateway.redstone.finance/gateway/contract?txId=${id}${this.network === "TEST" ? "&testnet=true" : ""}`;
+                let response = await fetch(route);
+                if (!response.ok) {
+                    txType = "UNSURE";
+                } else {
+                    const data = await response.json();
+                    if (data.contractTx == null || data.contractTx.tags == null) {
+                        // Can't see tags b/c tx wasn't uploaded using bundlr, now check srcTxId to see if AFTR
+                        if (data.srcTxId && data.srcTxId != "" && data.srcTxId != null && data.srcTxId != undefined) {
+                            if (this.aftrContractSrcs.includes(data.srcTxId)) {
+                                aftrVehicle = true;
+                                txType = "AFTR Vehicle";
+                                return txType;
+                            }
+                        }
+                        txType = "UNSURE";
+                    } else {
+                        txType = this.parseTags(data.contractTx);
+                    }
+                }
+            }
+
+            if (txType !== "UNSURE") {
+                return txType;
+            }
+
+            // Test for address
+            try {
+                const balance = await arweave.wallets.getBalance(id);
+                let winston = balance;
+                let ar = arweave.ar.winstonToAr(balance);
+            
+                if (Number(ar) > 0) {
+                    txType = "Address";
+                } else {
+                    txType = "Unknown - could be a wallet address with 0 AR";
+                }
+            } catch(e) {
+                console.log("ERROR when getting balance. " + e);
+            }
+
+            return txType;
+        }
     },
 }
 </script>
