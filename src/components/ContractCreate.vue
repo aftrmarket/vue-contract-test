@@ -163,7 +163,7 @@ export default {
 
             /*** WARP */
             // Deploy Sample AFTR Contract
-            let txIds = await warpCreateContract(newContractSrc, initState, undefined, true, this.network);
+            let txIds = await warpCreateContract(contractSrc, initState, undefined, true, this.network);
             this.contractId = txIds.contractTxId;
 
             await this.readContract();
