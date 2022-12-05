@@ -117,6 +117,10 @@ async function warpSaveNewSource(contractId, newSource, env = "") {
         const newSrcTxId = await contract.save({ 
             src: newSource
         });
+
+        //const srcTx = await warp.createSourceTx({ src: contractSrc }, wallet);
+
+
         return newSrcTxId;
     } catch(e) {
         console.log("ERROR saving new contract source: " + e);
@@ -183,7 +187,7 @@ function aftrTags(currentTags, aftr = false) {
     }
     tags.push( { name: "Protocol", value: import.meta.env.VITE_SMARTWEAVE_TAG_PROTOCOL } );
     tags.push( { name: "Implements", value: ["ANS-110"] });
-    tags.push( { name: "Type", value: ["token", "vehicle"] } );
+    tags.push( { name: "Type", value: ["aftr-repo"] } );
 
     return tags;
 };

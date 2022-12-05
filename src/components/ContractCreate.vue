@@ -153,9 +153,9 @@ export default {
             }
             this.contractId = this.eContractId;
             //this.contractSrcId = await this.returnContractSrc(this.contractId);
-            // await this.readContract();
-            // await this.updateWalletBalance();
-            console.log(await this.findIdType(this.contractId));
+            await this.readContract();
+            await this.updateWalletBalance();
+            //console.log(await this.findIdType(this.contractId));
             
         },
         async buttonPress2() {
