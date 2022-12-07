@@ -64,13 +64,17 @@ async function warpCreateContract(source, initState, currentTags, aftr = false, 
      * { contractTxId: string, srcTxId: string }
      */
 
-    let tags = [];
-    if (aftr) {
-        tags = aftrTags(currentTags);
-    }
+    let tags = aftrTags(currentTags, aftr);
+
     const warp = warpInit(env);
     try {
-        let txIds = await warp.createContract.deploy({
+        // let txIds = await warp.createContract.deploy({
+        //     wallet: "use_wallet",
+        //     initState: initState,
+        //     src: source,
+        //     tags
+        // });
+        let txIds = await warp.deploy({
             wallet: "use_wallet",
             initState: initState,
             src: source,
@@ -83,14 +87,23 @@ async function warpCreateContract(source, initState, currentTags, aftr = false, 
     }
 };
 
-async function warpCreateFromTx(initState, srcId, tags, env = "") {
+async function warpCreateFromTx(initState, srcId, currentTags, aftr = false, env = "") {
     /*** 
      * Returns:
      * { contractTxId: string, srcTxId: string }
      */
     const warp = warpInit(env);
     try {
-        let txIds = await warp.createContract.deployFromSourceTx({
+        // let txIds = await warp.createContract.deployFromSourceTx({
+        //     wallet: "use_wallet",
+        //     initState: initState,
+        //     srcTxId: srcId,
+        //     tags
+        // });
+
+        let tags = aftrTags(currentTags, aftr);
+
+        let txIds = await warp.deployFromSourceTx({
             wallet: "use_wallet",
             initState: initState,
             srcTxId: srcId,
@@ -103,23 +116,11 @@ async function warpCreateFromTx(initState, srcId, tags, env = "") {
     }
 };
 
-async function warpSaveNewSource(contractId, newSource, env = "") {
+async function warpSaveNewSource(newSource, env = "") {
     const warp = warpInit(env);
     try {
-        //const newSrcTxId = await warp.contract.save({ src: newSource });
-
-        const contract = warp.contract(contractId)
-            .setEvaluationOptions({
-                internalWrites: true
-            })
-            .connect("use_wallet");
-
-        const newSrcTxId = await contract.save({ 
-            src: newSource
-        });
-
-        //const srcTx = await warp.createSourceTx({ src: contractSrc }, wallet);
-
+        const newSrcTx = await warp.createSourceTx({ src: newSource }, "use_wallet");
+        const newSrcTxId = await warp.saveSourceTx(newSrcTx);
 
         return newSrcTxId;
     } catch(e) {
@@ -185,9 +186,11 @@ function aftrTags(currentTags, aftr = false) {
     if (currentTags) {
         tags.push(currentTags);
     }
-    tags.push( { name: "Protocol", value: import.meta.env.VITE_SMARTWEAVE_TAG_PROTOCOL } );
-    tags.push( { name: "Implements", value: ["ANS-110"] });
-    tags.push( { name: "Type", value: ["aftr-repo"] } );
+    if (aftr) {
+        tags.push( { name: "Protocol", value: import.meta.env.VITE_SMARTWEAVE_TAG_PROTOCOL } );
+        tags.push( { name: "Implements", value: ["ANS-110"] });
+        tags.push( { name: "Type", value: ["aftr-repo"] } );
+    }
 
     return tags;
 };

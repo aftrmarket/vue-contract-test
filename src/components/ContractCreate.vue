@@ -129,6 +129,7 @@ export default {
             const result = await warpRead(this.contractId, undefined, this.network);
             this.contractState = result;
             this.contractSrcId = await this.getContractSourceId(this.contractId);
+            this.findIdType(this.contractId);
         },
         reset() {
             this.eContractId = "";
@@ -159,18 +160,22 @@ export default {
             
         },
         async buttonPress2() {
-            this.reset();
+            //this.reset();
 
             /*** WARP */
             // Deploy Sample AFTR Contract
-            let txIds = await warpCreateContract(contractSrc, initState, undefined, true, this.network);
+            //let txIds = await warpCreateContract(newContractSrc, initState, undefined, true, this.network);
+
+            // Create contract from a source (just like a Repo)
+            let newSrcId = "i0YyDgGDbdurVdbh3BHVq1tA7cu-kHQKptBLsGWdDkU";
+            let txIds = await warpCreateFromTx(initState, newSrcId, undefined, true, this.network);
             this.contractId = txIds.contractTxId;
 
             await this.readContract();
             await this.updateWalletBalance();
         },
         async buttonPress3() {
-            this.newSrcId = await warpSaveNewSource(this.contractId, newContractSrc, this.network);
+            this.newSrcId = await warpSaveNewSource(newContractSrc, this.network);
             await this.updateWalletBalance();
         },
         async buttonPress4() {
@@ -322,10 +327,10 @@ export default {
             let txType = "";
             let smartweaveContract = false;
             let aftrVehicle = false;
-            console.log(tx);
             for (let tag of tx.tags) {
                 let key = tag.get("name", {decode: true, string: true});
                 let value = tag.get('value', {decode: true, string: true});
+                console.log("TAG: " + key + ": " + value);
                 if (key === "App-Name" && value === "SmartWeaveContract") {
                     smartweaveContract = true;
                 }
