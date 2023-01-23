@@ -21,6 +21,7 @@
             </textarea>
         </div>
         <div><button @click="buttonPress4" class="btn mt-2">4. Run Query</button></div>
+        <div><button @click="buttonPress5" class="btn mt-2">5. Dry Run</button></div>
         <div v-if="errorMsg !== ''"><label>{{ errorMsg }}</label></div>
         <div class="pt-4 w-full">
             <vue-json-pretty :path="'res'" :data="contractState" :showDoubleQuotes="false" :deep=3 :deepCollapseChildren="false" :showLength="true" :showSelectController="true"> </vue-json-pretty>
@@ -31,13 +32,18 @@
 <script>
 import VueJsonPretty from 'vue-json-pretty';
 import 'vue-json-pretty/lib/styles.css';
-import { arweaveInit, warpCreateContract, warpCreateFromTx, warpInit, warpRead, warpWrite, warpSaveNewSource, warpEvolve } from "./utils/warpUtils.js";
+import { arweaveInit, warpCreateContract, warpCreateFromTx, warpInit, warpRead, warpWrite, warpDryWrite, warpSaveNewSource, warpEvolve } from "./utils/warpUtils.js";
 import Transaction from 'arweave/node/lib/transaction';
 import contractSrc from "./../files/aftrContractSrcPlayground.js?raw";
 import newContractSrc from "./../files/aftrContractSrc.js?raw";
-import initState from "./../files/aftrInitState.json?raw";
+//import newContractSrc from "./../files/playTokenSrc.js?raw";
+//import newContractSrc from "./../files/playTokenSrcWithTestFunc.js?raw";
+//import initState from "./../files/aftrInitState.json?raw";
+//import initState from "./../files/bravoInitState.json?raw";
+import initState from "./../files/playTokenInitStateTestFunc.json?raw";
 
 const queryProtocol = "AFTR-PLAY";
+// Play Counter Token ID:  EtB_GmTlI4lYz9t9hIFaDfdFotM8mK4eqM8QvPCSUOY
 
 export default {
     components: { VueJsonPretty },
@@ -127,6 +133,7 @@ export default {
                 return;
             }
             const result = await warpRead(this.contractId, undefined, this.network);
+            console.log(JSON.stringify(result.state));
             this.contractState = result;
             this.contractSrcId = await this.getContractSourceId(this.contractId);
             this.findIdType(this.contractId);
@@ -164,11 +171,14 @@ export default {
 
             /*** WARP */
             // Deploy Sample AFTR Contract
-            //let txIds = await warpCreateContract(newContractSrc, initState, undefined, true, this.network);
+            let txIds = await warpCreateContract(newContractSrc, initState, undefined, true, this.network);
+
+            // Deploy regular PST
+            //let txIds = await warpCreateContract(newContractSrc, initState, undefined, false, this.network);
 
             // Create contract from a source (just like a Repo)
-            let newSrcId = "i0YyDgGDbdurVdbh3BHVq1tA7cu-kHQKptBLsGWdDkU";
-            let txIds = await warpCreateFromTx(initState, newSrcId, undefined, true, this.network);
+            //let newSrcId = "i0YyDgGDbdurVdbh3BHVq1tA7cu-kHQKptBLsGWdDkU";
+            //let txIds = await warpCreateFromTx(initState, newSrcId, undefined, true, this.network);
             this.contractId = txIds.contractTxId;
 
             await this.readContract();
@@ -236,6 +246,35 @@ export default {
                 }
             }
             alert("TOTAL: " + totalCount);
+        },
+        async buttonPress5() {
+            if (this.network == "") {
+                alert("Please select a network.");
+                return;
+            }
+            //this.reset();
+            // let input = {
+            //     function: 'propose',
+            //     type: 'set',
+            //     key: 'settings.custom1',
+            //     value: "TEST"
+            // };
+            // let input = {
+            //     function: 'balance',
+            //     target: 'ewTkY6Mytg6C0AtYU6QlkEg1oH-9J2PPS0CM83RL9rk'
+            // };
+            // let input = {
+            //     function: "mint",
+            //     qty: 22
+            // };
+            let input = {
+                function: "finalize"
+            }
+
+            //let tx = await warpDryWrite(this.eContractId, input, undefined, undefined, this.network);
+            //let tx = await warpRead(this.eContractId, undefined, this.network);
+            let tx = await warpWrite(this.eContractId, input, undefined, undefined, this.network);
+            this.contractState = tx;
         },
         async runQuery(cursor = "", pageLength = 100) {
             const arweave = arweaveInit(this.network);

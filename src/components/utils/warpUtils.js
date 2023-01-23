@@ -58,6 +58,24 @@ async function warpWrite(contractId, input, internalWrites = true, bundling = fa
     }
 };
 
+async function warpDryWrite(contractId, input, internalWrites = true, bundling = false, env = "") {
+    const warp = warpInit(env);
+    try {
+        const contract = warp.contract(contractId)
+        .setEvaluationOptions({ 
+            internalWrites: internalWrites,
+            disableBundling: !bundling
+         })
+        .connect("use_wallet");
+        const result = await contract.dryWrite(input);
+        return result;
+    } catch(e) {
+        console.log(e);
+        return "";
+    }
+};
+
+
 async function warpCreateContract(source, initState, currentTags, aftr = false, env = "") {
     /*** 
      * Returns:
@@ -65,7 +83,6 @@ async function warpCreateContract(source, initState, currentTags, aftr = false, 
      */
 
     let tags = aftrTags(currentTags, aftr);
-
     const warp = warpInit(env);
     try {
         // let txIds = await warp.createContract.deploy({
@@ -195,4 +212,4 @@ function aftrTags(currentTags, aftr = false) {
     return tags;
 };
 
-export { warpInit, warpRead, warpWrite, warpCreateContract, warpCreateFromTx, warpSaveNewSource, warpEvolve, arweaveInit };
+export { warpInit, warpRead, warpWrite, warpDryWrite, warpCreateContract, warpCreateFromTx, warpSaveNewSource, warpEvolve, arweaveInit };

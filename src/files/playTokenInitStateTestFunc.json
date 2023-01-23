@@ -1,0 +1,19 @@
+{
+    "name" : "Play Counter Token",
+    "ticker" : "PLAYCOUNT",
+    "counter": 0,
+    "balances" : {},
+    "vault" : {},
+    "claimable": [],
+    "claims": [],
+    "evolve": "",
+    "settings" : [
+        [ "quorum", 0.5 ],
+        [ "support", 0.5],
+        [ "voteLength", 2000 ],
+        [ "communityAppUrl", "" ],
+        [ "communityDiscussionLinks", "" ],
+        [ "communityDescription", "Test token used to test the flexibility of smart contracts." ],
+        [ "communityLogo", "Cwz6dyp29TiBC2sk8D3YovTfjcrJVZuLb-rdXJ84uXE"]
+    ]
+}

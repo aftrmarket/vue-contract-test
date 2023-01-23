@@ -1,0 +1,196 @@
+{
+    "name": "Bravo Team",
+    "owner": "ewTkY6Mytg6C0AtYU6QlkEg1oH-9J2PPS0CM83RL9rk",
+    "vault": {},
+    "votes": [
+      {
+        "status": "passed",
+        "type": "addMember",
+        "id": "1091544kZMg7Jcj163RQCKVl63bAurQPmg4_tX51Rgtk7XO4H40",
+        "totalWeight": 1,
+        "votingPower": {
+          "ewTkY6Mytg6C0AtYU6QlkEg1oH-9J2PPS0CM83RL9rk": 1
+        },
+        "yays": 0,
+        "nays": 0,
+        "voted": [],
+        "start": 1091544,
+        "lockLength": 0,
+        "voteLength": 0,
+        "recipient": "uWFatpjMyqxa3kGIuI3r02lxQ5tH22cXgadqj-5YJBA",
+        "qty": 1,
+        "note": "Add new member, uWFatpjMyqxa3kGIuI3r02lxQ5tH22cXgadqj-5YJBA, with a balance of 1",
+        "statusNote": "Single owner, no vote required."
+      },
+      {
+        "status": "passed",
+        "type": "set",
+        "id": "1091546UThRyYOrnVWqAbGU37ba-L9eZVruWUkftnCBa-Fgf2U0",
+        "totalWeight": 1,
+        "votingPower": {
+          "ewTkY6Mytg6C0AtYU6QlkEg1oH-9J2PPS0CM83RL9rk": 1
+        },
+        "yays": 0,
+        "nays": 0,
+        "voted": [],
+        "start": 1091546,
+        "lockLength": 0,
+        "voteLength": 0,
+        "key": "settings.support",
+        "value": 0.51,
+        "note": "Change support from 0.5 to 0.51",
+        "statusNote": "Single owner, no vote required."
+      },
+      {
+        "status": "passed",
+        "type": "set",
+        "id": "1091547i1anIlL-_g_ctVCnG26TPrSwI0K8wxb2PSTOeBONooQ0",
+        "totalWeight": 1,
+        "votingPower": {
+          "ewTkY6Mytg6C0AtYU6QlkEg1oH-9J2PPS0CM83RL9rk": 1
+        },
+        "yays": 0,
+        "nays": 0,
+        "voted": [],
+        "start": 1091547,
+        "lockLength": 0,
+        "voteLength": 0,
+        "key": "ownership",
+        "value": "multi",
+        "note": "Change ownership from single to multi",
+        "statusNote": "Single owner, no vote required."
+      },
+      {
+        "status": "active",
+        "type": "set",
+        "id": "1091547_z_TTLvHio3Zyg8h3tOvods4gXHNVOmr9k-m5psi8Uw1",
+        "totalWeight": 2,
+        "votingPower": {
+          "ewTkY6Mytg6C0AtYU6QlkEg1oH-9J2PPS0CM83RL9rk": 1,
+          "uWFatpjMyqxa3kGIuI3r02lxQ5tH22cXgadqj-5YJBA": 1
+        },
+        "yays": 1,
+        "nays": 1,
+        "voted": [
+          "ewTkY6Mytg6C0AtYU6QlkEg1oH-9J2PPS0CM83RL9rk",
+          "uWFatpjMyqxa3kGIuI3r02lxQ5tH22cXgadqj-5YJBA"
+        ],
+        "start": 1091547,
+        "lockLength": 0,
+        "voteLength": 2160,
+        "key": "desc",
+        "value": "A repo to hold Bravo artifacts on-chain.",
+        "note": "Change desc from undefined to A repo to hold Bravo artifacts on-chain."
+      },
+      {
+        "status": "passed",
+        "type": "set",
+        "id": "1091547_z_TTLvHio3Zyg8h3tOvods4gXHNVOmr9k-m5psi8Uw2",
+        "totalWeight": 2,
+        "votingPower": {
+          "ewTkY6Mytg6C0AtYU6QlkEg1oH-9J2PPS0CM83RL9rk": 1,
+          "uWFatpjMyqxa3kGIuI3r02lxQ5tH22cXgadqj-5YJBA": 1
+        },
+        "yays": 2,
+        "nays": 0,
+        "voted": [
+          "ewTkY6Mytg6C0AtYU6QlkEg1oH-9J2PPS0CM83RL9rk",
+          "uWFatpjMyqxa3kGIuI3r02lxQ5tH22cXgadqj-5YJBA"
+        ],
+        "start": 1091547,
+        "lockLength": 0,
+        "voteLength": 2160,
+        "key": "settings.communityLogo",
+        "value": "L0EBm-bn-Ck-5Mc98yFcuAAhk0Ds_ilNKrU4QnCl8wA",
+        "note": "Change communityLogo from  to L0EBm-bn-Ck-5Mc98yFcuAAhk0Ds_ilNKrU4QnCl8wA",
+        "statusNote": "Total Support achieved before vote length timeline."
+      },
+      {
+        "status": "quorumFailed",
+        "type": "addMember",
+        "id": "10915529VW_d4aEYqwiquCKYZ7d3k1oeW0gyPLmPKdXvIXLocs2",
+        "totalWeight": 2,
+        "votingPower": {
+          "ewTkY6Mytg6C0AtYU6QlkEg1oH-9J2PPS0CM83RL9rk": 1,
+          "uWFatpjMyqxa3kGIuI3r02lxQ5tH22cXgadqj-5YJBA": 1
+        },
+        "yays": 0,
+        "nays": 0,
+        "voted": [],
+        "start": 1091552,
+        "lockLength": 0,
+        "voteLength": 2160,
+        "recipient": "qIvAbyxsSDnfmLHgRjD1i0jvoLkLFeh_jYFCt_IjdUI",
+        "qty": 1,
+        "note": "Add new member, qIvAbyxsSDnfmLHgRjD1i0jvoLkLFeh_jYFCt_IjdUI, with a balance of 1",
+        "statusNote": "The proposal failed due to the Quorum not being met. The proposal's quorum was 0"
+      },
+      {
+        "status": "active",
+        "type": "evolve",
+        "id": "10922331YmhuMoT7_BTzIIIPlmUOajTImNLk7lzxSj82-Up1vI2",
+        "totalWeight": 2,
+        "votingPower": {
+          "ewTkY6Mytg6C0AtYU6QlkEg1oH-9J2PPS0CM83RL9rk": 1,
+          "uWFatpjMyqxa3kGIuI3r02lxQ5tH22cXgadqj-5YJBA": 1
+        },
+        "yays": 0,
+        "nays": 0,
+        "voted": [],
+        "start": 1092233,
+        "lockLength": 0,
+        "voteLength": 2160,
+        "value": "drE3xaNRlex47dZZOEAos0t4W_LYU6AlHnQqVgXCAbw",
+        "note": "Evolve contract to drE3xaNRlex47dZZOEAos0t4W_LYU6AlHnQqVgXCAbw. Verify the new contract source here. https://aftr.market/latest-contract-source"
+      },
+      {
+        "status": "active",
+        "type": "set",
+        "id": "1094324XBeAaG2QLHYfEMG5dQGlhiMCGOVFiLVSKdHCsaBT68M2",
+        "totalWeight": 2,
+        "votingPower": {
+          "ewTkY6Mytg6C0AtYU6QlkEg1oH-9J2PPS0CM83RL9rk": 1,
+          "uWFatpjMyqxa3kGIuI3r02lxQ5tH22cXgadqj-5YJBA": 1
+        },
+        "yays": 0,
+        "nays": 0,
+        "voted": [],
+        "start": 1094324,
+        "lockLength": 0,
+        "voteLength": 2160,
+        "key": "settings.support",
+        "value": 0.52,
+        "note": "Change support from 0.51 to 0.52"
+      }
+    ],
+    "claims": [],
+    "evolve": "",
+    "status": "started",
+    "ticker": "BRAVO",
+    "tokens": [],
+    "balances": {
+      "ewTkY6Mytg6C0AtYU6QlkEg1oH-9J2PPS0CM83RL9rk": 1,
+      "uWFatpjMyqxa3kGIuI3r02lxQ5tH22cXgadqj-5YJBA": 1
+    },
+    "settings": [
+      [
+        "quorum",
+        0.5
+      ],
+      [
+        "support",
+        0.51
+      ],
+      [
+        "voteLength",
+        2160
+      ],
+      [
+        "communityLogo",
+        "L0EBm-bn-Ck-5Mc98yFcuAAhk0Ds_ilNKrU4QnCl8wA"
+      ]
+    ],
+    "claimable": [],
+    "ownership": "multi",
+    "votingSystem": "weighted"
+  }

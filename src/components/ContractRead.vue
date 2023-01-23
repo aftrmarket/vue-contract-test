@@ -9,6 +9,8 @@
             <input v-model="contractId" type="text" placeholder="Enter Contract ID" class="input input-bordered w-96" /><br/>
         </div>
         <div><button @click="buttonPress" class="btn mt-2">Read Contract</button></div>
+        <div>Wallet: {{ walletValue }}</div>
+        <div>Evolve: {{ evolveValue }}</div>
         <div class="pt-4 w-full">
             <vue-json-pretty :path="'res'" :data="contractState" :showDoubleQuotes="false" :deep=3 :deepCollapseChildren="false" :showLength="true" :showSelectController="true"> </vue-json-pretty>
         </div>
@@ -19,36 +21,53 @@
 import VueJsonPretty from 'vue-json-pretty';
 import 'vue-json-pretty/lib/styles.css';
 import Arweave from "arweave";
-import { arweaveInit, warpCreateContract, warpCreateFromTx, warpInit, warpRead, warpWrite } from "./utils/warpUtils.js";
+import { warpRead } from "./utils/warpUtils.js";
 
 const arweave = Arweave.init({
-    host: 'localhost',
-    port: 1984,
-    protocol: 'http'
+    host: 'arweave.net',
+    port: 443,
+    protocol: 'https'
 });
 
 export default {
     components: { VueJsonPretty },
     data() {
         return {
-            network: "local",
+            network: "testnet",
             contractId: "",
             contractState: {},
+            evolve: "",
+            walletAddress: "",
         };
     },
     computed: {
-
+        walletValue() {
+            if (this.walletAddress === "") {
+                return "None connected";
+            } else {
+                return this.walletAddress;
+            }
+        },
+        evolveValue() {
+            if (this.evolve === "") {
+                return "No Value";
+            } else {
+                return this.evolve;
+            }
+        }
     },
     methods: {
         async buttonPress() {
             if (this.contractId === "") {
                 return;
             }
-            // const result = await warpRead(this.contractId);
-            // this.contractState = result;
+            //this.walletAddress = await window.arweaveWallet.getActiveAddress();
+            const result = await warpRead(this.contractId, true, "TEST");
+            this.evolve = result.state.evolve;
+            this.contractState = result;
 
-            let txType = await this.testForType();
-            alert(txType);
+            //let txType = await this.testForType();
+            //alert(txType);
         },
         async testForType() {
             let txType = "";
