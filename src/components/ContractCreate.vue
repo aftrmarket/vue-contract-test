@@ -11,6 +11,8 @@
             <button @click="buttonAdd" class="btn mt-2">Add to Wallet</button>
         </div>
         <div><button @click="buttonPress1" class="btn mt-2">1. Use Existing Contract</button></div>
+        <div><button @click="buttonInteraction" class="btn mt-2">View Interactions</button></div>
+        <div><button @click="getContractsFromSource" class="btn mt-2">Get Contracts From Source</button></div>
         <div><button @click="buttonPress2" class="btn mt-2">2. Create Contract</button></div>
         <div>Contract ID: {{ contractId }}</div>
         <div>Contract Source ID: {{ contractSrcId }}</div>
@@ -20,8 +22,14 @@
             <textarea v-model="queryInput" class="textarea textarea-bordered" placeholder="Enter Query" rows="10" cols="100">
             </textarea>
         </div>
+        <div class="flex flex-col-1">
+            <input v-model="depTokenId" type="text" placeholder="Enter Depositing Token ID" class="input input-bordered w-96" />
+            <input v-model="repoId" type="text" placeholder="Enter Repo ID" class="input input-bordered w-96" />
+            <input v-model="depQty" type="text" placeholder="Qty" class="input input-bordered" />
+            <button @click="buttonDeposit" class="btn mt-2">Test Deposit</button>
+        </div>
         <div><button @click="buttonPress4" class="btn mt-2">4. Run Query</button></div>
-        <div><button @click="buttonPress5" class="btn mt-2">5. Dry Run</button></div>
+        <div><button @click="buttonPress5" class="btn mt-2">5. Run Textarea</button></div>
         <div v-if="errorMsg !== ''"><label>{{ errorMsg }}</label></div>
         <div class="pt-4 w-full">
             <vue-json-pretty :path="'res'" :data="contractState" :showDoubleQuotes="false" :deep=3 :deepCollapseChildren="false" :showLength="true" :showSelectController="true"> </vue-json-pretty>
@@ -35,12 +43,14 @@ import 'vue-json-pretty/lib/styles.css';
 import { arweaveInit, warpCreateContract, warpCreateFromTx, warpInit, warpRead, warpWrite, warpDryWrite, warpSaveNewSource, warpEvolve } from "./utils/warpUtils.js";
 import Transaction from 'arweave/node/lib/transaction';
 import contractSrc from "./../files/aftrContractSrcPlayground.js?raw";
-import newContractSrc from "./../files/aftrContractSrc.js?raw";
-//import newContractSrc from "./../files/playTokenSrc.js?raw";
+//import newContractSrc from "./../files/aftrContractSrc.js?raw";
+import newContractSrc from "./../files/playTokenSrc.js?raw";
 //import newContractSrc from "./../files/playTokenSrcWithTestFunc.js?raw";
 //import initState from "./../files/aftrInitState.json?raw";
+import initState from "./../files/playTokenInitState.json?raw";
 //import initState from "./../files/bravoInitState.json?raw";
-import initState from "./../files/playTokenInitStateTestFunc.json?raw";
+//import initState from "./../files/playTokenInitStateTestFunc.json?raw";
+import { createRepo, deposit } from "aftr-js";
 
 const queryProtocol = "AFTR-PLAY";
 // Play Counter Token ID:  EtB_GmTlI4lYz9t9hIFaDfdFotM8mK4eqM8QvPCSUOY
@@ -62,7 +72,12 @@ export default {
             walletBalance: 0,
             walletAddr: "",
             errorMsg: "",
+            depTokenId: "Wgkj_tFAZKQh-2Ke6_sOixSxTKOXukmdrcP9zd_PEwA",
+            repoId: "6_FzWMZixdOEVr1Pyt3zw-sMKlB6OFit8cKWSiVlzKg",
+            depQty: 3,
             tags: [],
+            interactions: {},
+            validities: {},
 
             queryInput: `
             query {
@@ -159,6 +174,22 @@ export default {
                 alert("Please enter a Contract ID.");
                 return;
             }
+
+            // indexedDB.databases().then(function(databases) {
+            //     for (var i = 0; i < databases.length; i++) {
+            //         console.log("Database name: " + databases[i].name);
+            //     }
+            // });
+
+            // const request = window.indexedDB.open("level-js-./cache/warp/state", 1);
+            // request.onsuccess = function(event) {
+            //     const db = event.target.result;
+            //     console.log("Object store names: " + JSON.stringify(db.objectStoreNames));
+
+            //     const objectStore = db.transaction(["./cache/warp/state"], "readwrite").objectStore("./cache/warp/state");
+            //     objectStore.clear();
+            // };
+
             this.contractId = this.eContractId;
             //this.contractSrcId = await this.returnContractSrc(this.contractId);
             await this.readContract();
@@ -166,7 +197,64 @@ export default {
             //console.log(await this.findIdType(this.contractId));
             
         },
-        async buttonPress2() {
+        async buttonInteraction() {
+            if (this.eContractId === "") {
+                alert("Please enter a Contract ID.");
+                return;
+            }
+            let activities = [];
+            const contract = await warpRead(this.eContractId, undefined, this.network);
+            this.validities = contract.validity;
+            this.interactions = await this.getInteractions(this.eContractId);
+            // console.log(JSON.stringify(interactions));
+            // this.contractState = this.interactions;
+            for (const i of this.interactions) {
+                let parsed = this.parseActivity(i.interaction);
+                activities.push(parsed);
+            }
+            this.contractState = activities;
+        },
+        async getContractsFromSource() {
+            const aftrSources = ["i0YyDgGDbdurVdbh3BHVq1tA7cu-kHQKptBLsGWdDkU", "drE3xaNRlex47dZZOEAos0t4W_LYU6AlHnQqVgXCAbw", "Y5jbLtKAUZna_If7ec0-LiQrkzMIfXq9dv08ncKJTt0", "ZoWzPJHkGQR6XFIzm5fVcRl8kJBCB-TnydjftvPfrNE", "ZltjnWSiHr04ETayUyJivkUAMTHBYbgo3C6BnwNsHmA", "tlqEtHxU3CJ5-eaCqvA6Hg0IYsra_Jl9atoeA28ox0I", "ZD-gAcaWEKE6Woe2BNrFXTljDOgrXXQXCBOutIfTgYo", "vZPaytXQvw4vrauZOztCCSbZoFo84a9JNDh2RF-OJ68", "3GzFtrEinxbUX9hjfgpcCLSdvstrK2ULehrorlkiPx8", "KWnNIDwOxzDm0BM2hkxibRlHwwvg_MVsIkmgchziyOw", "cqi_qZYI3wZX5aux32n11Me-vO9fI_m9L-0DRE9n0gs"];
+            let activeAftrSources = [];
+            for (let src of aftrSources) {
+                const response = await fetch("https://gateway.warp.cc/gateway/contracts-by-source?id=" + src);
+                if (response.status !== 200) {
+                    throw response.status + " - " + response.statusText;
+                }
+                const data = await response.json();
+                if (data.paging.items > 0) {
+                    activeAftrSources.push({
+                        "aftrSrc" : src,
+                        "contracts" : data.paging.items
+                    });
+                }
+            }
+            this.contractState = activeAftrSources;
+        },
+        parseActivity(data) {
+            // Parses the query response and returns an object with the needed variables
+            let activity = {};
+            activity.id = data.id;
+            activity.owner = data.owner.address;
+            activity.timestamp = data.block.timestamp;
+            activity.block = data.block.height;
+            activity.result = this.validities[activity.id];
+            if (data.id === "GCgomdW53OKfTRgzgdGzsl-Y2GDky9-PNJ9udZIrvs4") {
+                console.log(JSON.stringify(data));
+            }
+
+            // Parse Input tag to get the interaction specifics
+            for (let tag of data.tags) {
+                if (tag.name === "Input") {
+                    activity.input = JSON.parse(tag.value);
+                } else if (tag.name === "Contract") {
+                    activity.contract = tag.value;
+                }
+            }
+            return activity;
+        },
+        async buttonPress2first() {
             //this.reset();
 
             /*** WARP */
@@ -183,6 +271,30 @@ export default {
 
             await this.readContract();
             await this.updateWalletBalance();
+        },
+        async buttonPress2() {
+            let repo = {
+                name: "dApp - TST648",
+                ticker: "dTST648"
+            };
+            let response = await createRepo(repo, "use_wallet", undefined, this.network);
+            if (response.status === "success") {
+                alert("NEW REPO: " + response.data);
+            } else {
+                alert("ERROR: " + response.message);
+            }
+        },
+        async buttonDeposit() {
+            if (this.depTokenId === "" || this.depQty === "" || this.repoId === "") {
+                alert("Invalid Input!");
+                return;
+            }
+            let response = await deposit(this.repoId, this.depTokenId, Number(this.depQty), "use_wallet", this.network);
+            if (response.status === "success") {
+                alert("Deposit Successful: " + response.data.repoTxId + " & " + response.data.depTokenTxId);
+            } else {
+                alert("Deposit Failed: " + response.message);
+            }
         },
         async buttonPress3() {
             this.newSrcId = await warpSaveNewSource(newContractSrc, this.network);
@@ -267,10 +379,21 @@ export default {
             //     function: "mint",
             //     qty: 22
             // };
-            let input = {
-                function: "finalize"
-            }
+            // let input = {
+            //     function: "finalize"
+            // }
 
+            /*
+                {
+                    "function": "propose",
+                    "type" : "externalInteraction",
+                    "target": "Wgkj_tFAZKQh-2Ke6_sOixSxTKOXukmdrcP9zd_PEwA",
+                    "value": "{\"function\" : \"mint\", \"qty\": 22}"
+                }
+            */
+            let input = JSON.parse(this.queryInput);
+            console.log(input);
+            
             //let tx = await warpDryWrite(this.eContractId, input, undefined, undefined, this.network);
             //let tx = await warpRead(this.eContractId, undefined, this.network);
             let tx = await warpWrite(this.eContractId, input, undefined, undefined, this.network);
@@ -387,6 +510,13 @@ export default {
             }
 
             return txType;
+        },
+        async getInteractions(contractId) {
+            console.log(contractId);
+            let route = 'https://gateway.redstone.finance/gateway/interactions?contractId=' + contractId + (this.network === 'TEST' ? '&testnet=true' : '');
+            let response = await fetch(route)
+            let data = await response.json()
+            return data.interactions
         },
         async findIdType(id) {
             const arweave = arweaveInit();

@@ -34,7 +34,7 @@ export default {
     data() {
         return {
             network: "testnet",
-            contractId: "",
+            contractId: "Tb9kKmUqvNw_HnWgroWkRQK8Fa8frxl7CKA3zSsrETc",
             contractState: {},
             evolve: "",
             walletAddress: "",
@@ -65,6 +65,7 @@ export default {
             const result = await warpRead(this.contractId, true, "TEST");
             this.evolve = result.state.evolve;
             this.contractState = result;
+            console.log(JSON.stringify(result));
 
             //let txType = await this.testForType();
             //alert(txType);

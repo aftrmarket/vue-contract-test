@@ -11,6 +11,7 @@
   "dependencies": {
     "@codemirror/lang-json": "^6.0.1",
     "@codemirror/theme-one-dark": "^6.1.0",
+    "aftr-js": "^0.1.15",
     "arweave": "^1.11.6",
     "codemirror": "^6.0.1",
     "daisyui": "^2.24.2",
@@ -19,7 +20,7 @@
     "vue-codemirror": "^6.1.1",
     "vue-json-pretty": "^2.2.2",
     "vue-sweetalert2": "^5.0.5",
-    "warp-contracts": "^1.2.35"
+    "warp-contracts": "^1.2.47"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.7",
