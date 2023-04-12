@@ -11,7 +11,7 @@
   "dependencies": {
     "@codemirror/lang-json": "^6.0.1",
     "@codemirror/theme-one-dark": "^6.1.0",
-    "aftr-js": "^0.1.15",
+    "aftr-js": "^0.1.23",
     "arweave": "^1.11.6",
     "codemirror": "^6.0.1",
     "daisyui": "^2.24.2",
