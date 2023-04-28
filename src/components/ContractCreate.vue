@@ -274,8 +274,8 @@ export default {
         },
         async buttonPress2() {
             let repo = {
-                name: "dApp - TST752",
-                ticker: "dTS752"
+                name: "Comm Fund",
+                ticker: "COMMFUND"
             };
             let response = await createRepo(repo, "use_wallet", undefined, this.network);
             if (response.status === "success") {
