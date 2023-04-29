@@ -55,7 +55,7 @@ export default {
             validities: {},
             repoName: "",
             repoTicker: "",
-            tagsString: "",
+            tagsString: '[{ "name": "CustomTag", "value": "MyTag" }]',
             tagValues: [],
         };
     },
@@ -137,14 +137,17 @@ export default {
             if (customTags.length === 0) {
                 response = await createRepo(repo, "use_wallet", undefined, this.network);
             } else {
-                response = await createRepo(repo, "use_wallet", undefined, customTags, this.network);
-                //response = await warpCreateFromTx(repo, "46NSN651ClSYi241BtcarUY15wBL7OJgJsDEALE9Dzo", customTags, true, this.network);
+                response = await createRepo(repo, "use_wallet", customTags, this.network);
+                //response = await warpCreateFromTx(JSON.stringify(repo), "46NSN651ClSYi241BtcarUY15wBL7OJgJsDEALE9Dzo", customTags, true, this.network);
             }
+            // console.log(JSON.stringify(response));
+            // alert(JSON.stringify(response));
             if (response.status === "success") {
                 alert("NEW REPO: " + response.data);
             } else {
                 alert("ERROR: " + response.message);
             }
+
         },
         async updateWalletBalance() {
             const arweave = arweaveInit(this.network);
