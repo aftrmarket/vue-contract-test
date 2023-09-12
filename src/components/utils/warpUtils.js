@@ -1,5 +1,5 @@
-import { DeployPlugin, InjectedArweaveSigner } from 'warp-contracts-plugin-deploy';
-import { WarpFactory } from "warp-contracts/web";
+import { DeployPlugin, InjectedArweaveSigner, ArweaveSigner } from 'warp-contracts-plugin-deploy';
+import { WarpFactory, defaultCacheOptions } from "warp-contracts";
 import Arweave, { init } from "arweave";
 
 function warpInit(env = "") {
@@ -11,14 +11,16 @@ function warpInit(env = "") {
     try {
         // Using Warp
         if (env === "PROD") {
-            warp = WarpFactory.forMainnet().use(new DeployPlugin());
+            // warp = WarpFactory.forMainnet().use(new DeployPlugin());
+            // warp = WarpFactory.forMainnet({ ...defaultCacheOptions, inMemory: true });
+            warp = WarpFactory.forMainnet({ ...defaultCacheOptions });
         } else if (env === "TEST") {
             warp = WarpFactory.forTestnet().use(new DeployPlugin());
         } else if (env === "DEV") {
             const arweave = arweaveInit();
-            warp = WarpFactory.forLocal(import.meta.env.VITE_ARWEAVE_PORT, arweave);
+            warp = WarpFactory.forLocal().use(new DeployPlugin());
         } else {
-            warp = WarpFactory.forTestnet();
+            warp = WarpFactory.forTestnet().use(new DeployPlugin());
         }
     } catch (e) {
         console.log(e);
@@ -32,7 +34,11 @@ async function warpRead(contractId, internalWrites = true, env = "TEST") {
     try {
         const contract = warp.contract(contractId)
             .setEvaluationOptions({
-                internalWrites: internalWrites,
+                allowBigInt: true,
+                internalWrites,
+                unsafeClient: "skip",
+                //remoteStateSyncEnabled: true,
+                //remoteStateSyncSource: "https://dre-5.warp.cc/contract"
             });
         const result = await contract.readState();
         return result.cachedValue;
@@ -114,6 +120,27 @@ async function warpCreateFromTx(initState, srcId, currentTags = undefined, aftr 
         console.log("ERROR deploying AFTR contract: " + e);
         return {};
     }
+};
+
+async function warpCreateSource(newSrc, env = "TEST") {
+    if (window.arweaveWallet) {
+        await window.arweaveWallet.connect(['ACCESS_ADDRESS', 'SIGN_TRANSACTION', 'ACCESS_PUBLIC_KEY', 'SIGNATURE']);
+    }
+    const userSigner = new InjectedArweaveSigner(window.arweaveWallet);
+    await userSigner.setPublicKey();
+
+    const warp = warpInit(env);
+
+    try {
+        const newSource = await warp.createSource( { src: newSrc }, new ArweaveSigner(window.arweaveWallet));
+        console.log("CREATE");
+        const newSrcId = await warp.saveSource(newSource);
+        console.log("SAVE");
+        return newSrcId;
+    } catch(e) {
+        console.log("ERROR saving source: " + e);
+        return "";
+    }    
 };
 
 function arweaveInit() {
@@ -221,4 +248,4 @@ async function post(ctx) {
 };
 
 
-export { warpInit, warpRead, warpWrite, warpCreateContract, warpCreateFromTx, arweaveInit, upload, getAsByteArray, readFile, dispatch, post };
+export { warpInit, warpRead, warpWrite, warpCreateContract, warpCreateFromTx, arweaveInit, upload, getAsByteArray, readFile, dispatch, post, warpCreateSource };

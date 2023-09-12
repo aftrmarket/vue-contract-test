@@ -33,8 +33,8 @@ export default {
     components: { VueJsonPretty },
     data() {
         return {
-            network: "testnet",
-            contractId: "Tb9kKmUqvNw_HnWgroWkRQK8Fa8frxl7CKA3zSsrETc",
+            network: "mainnet",
+            contractId: "KvgS1Ikrc_gnveocS_YMgRmBGH5eic61dFXKWpSzjMw",
             contractState: {},
             evolve: "",
             walletAddress: "",
@@ -62,8 +62,8 @@ export default {
                 return;
             }
             //this.walletAddress = await window.arweaveWallet.getActiveAddress();
-            const result = await warpRead(this.contractId, true, "TEST");
-            this.evolve = result.state.evolve;
+            const result = await warpRead(this.contractId, true, "PROD");
+            // this.evolve = result.state.evolve;
             this.contractState = result;
             console.log(JSON.stringify(result));
 

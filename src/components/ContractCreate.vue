@@ -40,14 +40,14 @@
 <script>
 import VueJsonPretty from 'vue-json-pretty';
 import 'vue-json-pretty/lib/styles.css';
-import { arweaveInit, warpCreateContract, warpCreateFromTx, warpInit, warpRead, warpWrite, warpDryWrite, warpSaveNewSource, warpEvolve } from "./utils/warpUtils.js";
+import { arweaveInit, warpCreateContract, warpRead, warpWrite, warpCreateSource } from "./utils/warpUtils.js";
 import Transaction from 'arweave/node/lib/transaction';
 import contractSrc from "./../files/aftrContractSrcPlayground.js?raw";
-//import newContractSrc from "./../files/aftrContractSrc.js?raw";
-import newContractSrc from "./../files/playTokenSrc.js?raw";
+import newContractSrc from "./../files/aftrContractSrc.js?raw";
+//import newContractSrc from "./../files/playTokenSrc.js?raw";
 //import newContractSrc from "./../files/playTokenSrcWithTestFunc.js?raw";
-//import initState from "./../files/aftrInitState.json?raw";
-import initState from "./../files/playTokenInitState.json?raw";
+import initState from "./../files/aftrInitState.json?raw";
+//import initState from "./../files/playTokenInitState.json?raw";
 //import initState from "./../files/bravoInitState.json?raw";
 //import initState from "./../files/playTokenInitStateTestFunc.json?raw";
 import { createRepo, deposit } from "aftr-js";
@@ -274,8 +274,8 @@ export default {
         },
         async buttonPress2() {
             let repo = {
-                name: "Comm Fund",
-                ticker: "COMMFUND"
+                name: "Event Controller Test",
+                ticker: "ECONTROLTEST"
             };
             let response = await createRepo(repo, "use_wallet", undefined, this.network);
             if (response.status === "success") {
@@ -297,7 +297,7 @@ export default {
             }
         },
         async buttonPress3() {
-            this.newSrcId = await warpSaveNewSource(newContractSrc, this.network);
+            this.newSrcId = await warpCreateSource(newContractSrc, this.network);
             await this.updateWalletBalance();
         },
         async buttonPress4() {
