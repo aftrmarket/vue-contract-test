@@ -1,6 +1,8 @@
 import { DeployPlugin, InjectedArweaveSigner, ArweaveSigner } from 'warp-contracts-plugin-deploy';
 import { WarpFactory, defaultCacheOptions } from "warp-contracts";
+// import { SqliteContractCache } from 'warp-contracts-sqlite';
 import Arweave, { init } from "arweave";
+import axios from "axios";
 
 function warpInit(env = "") {
     let warp = {};
@@ -12,8 +14,8 @@ function warpInit(env = "") {
         // Using Warp
         if (env === "PROD") {
             // warp = WarpFactory.forMainnet().use(new DeployPlugin());
-            // warp = WarpFactory.forMainnet({ ...defaultCacheOptions, inMemory: true });
-            warp = WarpFactory.forMainnet({ ...defaultCacheOptions });
+            warp = WarpFactory.forMainnet({ ...defaultCacheOptions, inMemory: true });
+            // warp = WarpFactory.forMainnet({ ...defaultCacheOptions });
         } else if (env === "TEST") {
             warp = WarpFactory.forTestnet().use(new DeployPlugin());
         } else if (env === "DEV") {
@@ -28,23 +30,39 @@ function warpInit(env = "") {
     return warp;
 };
 
-async function warpRead(contractId, internalWrites = true, env = "TEST") {
-    const warp = warpInit(env);
+async function warpRead(contractId, internalWrites = true, env = "TEST", useSdk = false) {
+    if (useSdk) {
+        const warp = warpInit(env);
 
-    try {
-        const contract = warp.contract(contractId)
-            .setEvaluationOptions({
-                allowBigInt: true,
-                internalWrites,
-                unsafeClient: "skip",
-                //remoteStateSyncEnabled: true,
-                //remoteStateSyncSource: "https://dre-5.warp.cc/contract"
-            });
-        const result = await contract.readState();
-        return result.cachedValue;
-    } catch (e) {
-        console.log(e);
-        return {};
+        try {
+            const contract = warp.contract(contractId)
+                .setEvaluationOptions({
+                    allowBigInt: true,
+                    internalWrites,
+                    unsafeClient: "skip",
+                    // remoteStateSyncEnabled: true,
+                    //remoteStateSyncSource: "https://dre-5.warp.cc/contract"
+                });
+            const result = await contract.readState();
+            return result;
+        } catch (e) {
+            console.log(e);
+            return {};
+        } finally {
+            await warp.close();
+        }
+    } else {
+        const dre = "https://dre-3.warp.cc";
+        const dreUrl = `${dre}/contract?id=${contractId}`;
+        let response = {};
+    
+        try {
+            response = await axios.get(dreUrl);
+            return response.data.state;
+        } catch (e) {
+            console.log(`ERROR FETCHING CONTRACT: ${e}`);
+            return response;
+        }
     }
 };
 
@@ -54,7 +72,8 @@ async function warpWrite(contractId, input, internalWrites = true, bundling = tr
         const contract = warp.contract(contractId)
             .setEvaluationOptions({
                 internalWrites: internalWrites,
-                disableBundling: !bundling
+                disableBundling: !bundling,
+                remoteStateSyncEnabled: true,
             })
             .connect("use_wallet");
         console.log(contract)
@@ -63,6 +82,8 @@ async function warpWrite(contractId, input, internalWrites = true, bundling = tr
     } catch (e) {
         console.log(e);
         return "";
+    } finally {
+        await warp.close();
     }
 };
 
@@ -91,6 +112,8 @@ async function warpCreateContract(source, initState, currentTags = undefined, af
     } catch (e) {
         console.log("ERROR deploying AFTR contract: " + e);
         return {};
+    } finally {
+        await warp.close();
     }
 };
 
@@ -119,6 +142,8 @@ async function warpCreateFromTx(initState, srcId, currentTags = undefined, aftr 
     } catch (e) {
         console.log("ERROR deploying AFTR contract: " + e);
         return {};
+    } finally {
+        await warp.close();
     }
 };
 
@@ -140,7 +165,9 @@ async function warpCreateSource(newSrc, env = "TEST") {
     } catch(e) {
         console.log("ERROR saving source: " + e);
         return "";
-    }    
+    } finally {
+        await warp.close();
+    }
 };
 
 function arweaveInit() {

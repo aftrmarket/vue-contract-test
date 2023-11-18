@@ -11,18 +11,22 @@
   "dependencies": {
     "@codemirror/lang-json": "^6.0.1",
     "@codemirror/theme-one-dark": "^6.1.0",
+    "@othent/kms": "^1.0.1",
     "aftr-js": "^0.1.25",
     "arlocal": "^1.1.60",
     "arweave": "^1.11.6",
+    "arweavekit": "^1.5.1",
+    "axios": "^1.6.2",
     "codemirror": "^6.0.1",
-    "daisyui": "^2.24.2",
+    "daisyui": "^4.4.1",
     "smartweave": "^0.4.49",
     "vue": "^3.2.37",
     "vue-codemirror": "^6.1.1",
     "vue-json-pretty": "^2.2.2",
     "vue-sweetalert2": "^5.0.5",
-    "warp-contracts": "^1.4.17",
-    "warp-contracts-plugin-deploy": "^1.0.9"
+    "warp-contracts": "^1.4.19",
+    "warp-contracts-plugin-deploy": "^1.0.9",
+    "warp-contracts-plugin-signature": "^1.0.17"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.7",
