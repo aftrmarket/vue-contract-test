@@ -20,16 +20,24 @@
             </div>
             <div class="pt-4">
                 Teams <br/>
-                <select v-if="teams.length > 0" v-model="teamId" class="select select-bordered w-full max-w-xs">
-                    <option disabled selected=true>Select Team</option>
-                    <option v-for="team of teams">{{ team }}</option>
-                </select>
+                <div v-if="teams.length > 0" class="flex flex-row">
+                    <select v-model="teamId" @change="teamSelected" class="select select-bordered w-full max-w-xs">
+                        <option disabled selected=true>Select Team</option>
+                        <option v-for="team of teams">{{ team }}</option>
+                    </select>
+                    <button @click="clearTeamSelect" :disabled="disableClear" class="btn btn-square ml-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
                 <div v-else>
                     <div>In order to buy players, you must create a team.</div>
-                    <div class="pr-2"><button @click="createTeam" class="btn mt-2">Create Team</button></div>
+                </div>
+                <div v-if="false" class="pt-2">
+                    <input v-model="teamName" type="text" placeholder="Team Name" class="input input-bordered w-full max-w-xs" />
+                    <div class="pr-2"><button :disabled="disableCreateTeam" class="btn mt-2">Create Team</button></div>
                 </div>
             </div>
-            <div v-if="teamId !== ''">
+            <div v-if="teamId !== ''" class="pt-4">
                 Players <br/>
                 <select v-if="players.length > 0" v-model="playerId" class="select select-bordered w-full max-w-xs">
                     <option disabled selected>Select Player</option>
@@ -45,6 +53,37 @@
         </div>
 
         <span v-if="loading" class="loading loading-dots loading-lg"></span>
+
+        <div v-if="buyProcess">
+            <ul class="timeline timeline-vertical font-mono">
+                <li v-if="step1">
+                    <div class="timeline-start">Step 1: Allow on Work Contract</div>
+                    <div class="timeline-middle">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg>
+                    </div>
+                    <div class="timeline-end timeline-box">{{ showTx(txId1, 1) }}</div>
+                    <hr/>
+                </li>
+                <li v-if="step2">
+                    <hr/>
+                    <div class="timeline-start">Step 2: Deposit on Player Contract</div>
+                    <div class="timeline-middle">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg>
+                    </div>
+                    <div class="timeline-end timeline-box">{{ showTx(txId2, 2) }}</div>
+                    <hr/>
+                </li>
+                <li v-if="step3">
+                    <hr/>
+                    <div class="timeline-start">Step 3: Deposit on Team Contract</div>
+                    <div class="timeline-middle">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg>
+                    </div>
+                    <div class="timeline-end timeline-box">{{ showTx(txId3, 3) }}</div>
+                </li>
+            </ul>
+        </div>
+
         <!--
         <div class="grid grid-cols-2 gap-4 p-4 border">
             <div class="pt-4 w-full">
@@ -63,7 +102,7 @@
 <script>
 import VueJsonPretty from 'vue-json-pretty';
 import 'vue-json-pretty/lib/styles.css';
-import { warpCreateFromTx, warpRead } from "./utils/warpUtils.js";
+import { warpRead } from "./utils/warpUtils.js";
 import othent from "./utils/othent";
 import arconnect from "./utils/arconnect";
 import * as arweaveWallet from "@othent/kms";
@@ -78,6 +117,8 @@ export default {
             TEAM_REG_CONTRACT: "niuXC2oVrT6qlAcPjxaf_vKmfM5itF2dDCZs4SEOE7o",
             PLAYER_REG_CONTRACT: "VIDlP72LABHhLGS_RiB7Sw8DhpQr8LeRHLp6d1MLl2I",
             GAME_CURRENCY_ID: "LKabBhoeJwwEJPko1soDg8q06K7wIC7FRA1kS049cpU",
+            TEAM_CONTRACT_SOURCE: "XhgQPOHE4vIecrOUnt_FQzhSwnt9boTqYcn-qfj-DPk",
+            API_ENDPOINT: "https://85hq5an6je.execute-api.us-east-1.amazonaws.com/",
             loading: false,
             loggedIn: false,
             network: "mainnet",
@@ -94,14 +135,49 @@ export default {
             workContract: {},
             teams: [],
             user: {},
+            txId1: "",
+            txId2: "",
+            txId3: "",
+            step1: false,
+            step2: false,
+            step3: false,
+            buyError: 0,
+            buyProcess: false,
         };
     },
     computed: {
-        toAr() {
-            return this.walletBalance/1000000000000;
-        }
+        disableCreateTeam() {
+            let disable = false;
+            if (this.teamId !== '' || this.teamName === '') {
+                disable = true;
+            }
+            return disable;
+        },
+        disableClear() {
+            let disable = false;
+            if (this.teamId === "") {
+                disable = true;
+            }
+            return disable;
+        },
+        showReject() {
+            let result = false;
+            if (!this.loading && this.buyProcess && this.txId2 !== "" && this.txId3 === "") {
+                result = true;
+            }
+            return true;
+        },
     },
     methods: {
+        showTx(txId, step) {
+            let tx = "";
+            if (txId !== "") {
+                tx = txId;
+            } else if ((this.buyError === 1 && step === 1) || (this.buyError === 2 && step === 2) || (this.buyError === 3 && step === 3)) {
+                tx = "Failed";
+            }
+            return tx;
+        },
         async login(provider = "arconnect") {
             this.loading = true;
 			try {
@@ -142,8 +218,17 @@ export default {
                 this.walletBalance = 0;
                 this.teamId = "";
                 this.myTeam = {};
+                this.teamName = "";
                 this.provider = "";
                 this.playerId = "";
+                this.txId1 = "";
+                this.txId2 = "";
+                this.txId3 = "";
+                this.step1 = false;
+                this.step2 = false;
+                this.step3 = false;
+                this.buyProcess = false;
+                this.buyError = 0;
                 this.loggedIn = false;
 				console.info("Logged out successfully");
 			} else {
@@ -177,8 +262,21 @@ export default {
                 });
             }
         },
+        teamSelected() {
+            this.teamName = this.teamRegistry.register[this.teamId].name;
+        },
+        clearTeamSelect() {
+            this.teamId = "";
+            this.teamName = "";
+        },
         async buyPlayer() {
             this.loading = true;
+            this.buyProcess = true;
+            this.buyError = 0;
+
+            this.txId1 = "";
+            this.txId2 = "";
+            this.txId3 = "";
 
             await this.readTeam();
 
@@ -189,6 +287,7 @@ export default {
                 return;
             }
 
+            this.step1 = true;
             console.log("Step 1");
 			console.log("*** ALLOW");
             const selectedPlayer = this.players.find(player => player.playerId === this.playerId); 
@@ -201,51 +300,56 @@ export default {
 				qty: Number(purchasePrice),
 			};
 
-			let txId = "";
+			
 			try {
-				txId = await this.warpInteractWrite(this.GAME_CURRENCY_ID, input);
+				this.txId1 = await this.warpInteractWrite(this.GAME_CURRENCY_ID, input);
 			} catch (e) {
 				console.log(`Interaction 1 (allow): ${e}`);
+                this.buyError = 1;
                 this.loading = false;
                 return;
 			}
-			console.log("*** ALLOW: " + txId);
+			console.log("*** ALLOW: " + this.txId1);
 
+            this.step2 = true;
 			console.log("Step 2");
 			console.log("*** BUY");
 			input = {
 				function: "deposit",
 				tokenId: this.GAME_CURRENCY_ID,
 				qty: Number(purchasePrice),
-				txID: txId,
+				txID: this.txId1,
 				target: this.teamId,
 			};
 
 			try {
-				txId = await this.warpInteractWrite(this.playerId, input);
+				this.txId2 = await this.warpInteractWrite(this.playerId, input);
 			} catch (e) {
 				console.log(`Interaction 2 (buy): ${e}`);
+                this.buyError = 2;
                 this.loading = false;
 				return;
 			}
-			console.log("*** BUY: " + txId);
+			console.log("*** BUY: " + this.txId2);
 
+            this.step3 = true;
 			console.log("Step 3");
 			console.log("*** DEPOSIT");
 			input = {
 				function: "deposit",
 				tokenId: this.playerId,
 				qty: 1,
-				txID: txId,
+				txID: this.txId2,
 			};
 			try {
-				txId = await this.warpInteractWrite(this.teamId, input);
+				this.txId3 = await this.warpInteractWrite(this.teamId, input);
 			} catch (e) {
 				console.log(`Interaction 3 (deposit): ${e}`);
+                this.buyError = 3;
                 this.loading = false;
 				return;
 			}
-			console.log("*** DEPOSIT: " + txId);
+			console.log("*** DEPOSIT: " + this.txId3);
             console.log("SUCCESSFUL!");
 
             this.loading = false;
@@ -278,6 +382,30 @@ export default {
                 const { originalTxId } = await contract.writeInteraction(input);
                 await warp.close();
                 return originalTxId;
+            } catch (err) {
+                console.log(err);
+                throw err;
+            }
+        },
+        async warpCreateFromSourceTx(srcTxId, initState) {
+            const warp = WarpFactory.forMainnet({ ...defaultCacheOptions }).use(new DeployPlugin());
+
+            let signer;
+            try {
+                if (this.provider == "othent") {
+                    signer = new InjectedArweaveSigner(arweaveWallet);
+                } else if (this.provider == "arconnect") {
+                    signer = new InjectedArweaveSigner(window.arweaveWallet);
+                }
+                await signer.setPublicKey();
+
+                const { contractTxId } = await warp.deployFromSourceTx({
+                    wallet: signer,
+                    initState: JSON.stringify(initState),
+                    srcTxId,
+                });
+                await warp.close();
+                return contractTxId;
             } catch (err) {
                 console.log(err);
                 throw err;
